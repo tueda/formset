@@ -320,14 +320,6 @@ def main():
     total_cpus = SystemInfo.number_of_physical_cores
     memory = int(SystemInfo.total_memory)
 
-    # Use 1 node for each job by default.
-    ncpus = total_cpus // nnodes
-    if ncpus < 2:
-        ncpus = max(ncpus, total_cpus)
-
-    sp = Setup()
-    sp.threads = ncpus if ncpus >= 2 else -1
-
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
         usage='%(prog)s [options] [par=val].. [par+=int].. [par*=float]..'
@@ -337,7 +329,8 @@ def main():
                         action='store',
                         nargs='?',
                         const='form.set',
-                        help='output to FILE (default: no, FILE=form.set)',
+                        help=('output to FILE (default: no (stdout), '
+                              'FILE=form.set)'),
                         metavar='FILE')
     parser.add_argument('-f',
                         '--form',
@@ -354,6 +347,14 @@ def main():
                         action='store_const',
                         const=True,
                         help='print expected initial memory usage and exit')
+    parser.add_argument('-n',
+                        '--ncpus',
+                        action='store',
+                        default=None,
+                        type=int,
+                        help=('number of cpus '
+                              '(default: number of cpus in a node)'),
+                        metavar='N')
     parser.add_argument('-p',
                         '--percentage',
                         action='store',
@@ -367,6 +368,17 @@ def main():
                         help=argparse.SUPPRESS)
     args = parser.parse_args()
     pars = {}
+
+    # Use 1 node for each job by default.
+    ncpus = total_cpus // nnodes
+    if ncpus < 2:
+        ncpus = max(ncpus, total_cpus)
+    # Can be overwritten.
+    if args.ncpus is not None:
+        ncpus = args.ncpus
+
+    sp = Setup()
+    sp.threads = ncpus if ncpus >= 2 else -1
 
     def metric_prefix(s):
         s = s.lower()
