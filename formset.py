@@ -9,6 +9,7 @@ from __future__ import print_function
 import argparse
 import contextlib
 import copy
+import math
 import re
 import subprocess
 import sys
@@ -42,8 +43,46 @@ def round_down(x, n):
 
 
 def round_up(x, n):
-    """Round down `x` to nearest `n`."""
+    """Round up `x` to nearest `n`."""
     return (x + (n - 1)) // n * n
+
+
+def metric_prefix(s):
+    """Parse a metric prefix as a number."""
+    s = s.lower()
+    if s == '':
+        return 1
+    if s == 'k':
+        return 1000
+    if s == 'm':
+        return 1000**2
+    if s == 'g':
+        return 1000**3
+    if s == 't':
+        return 1000**4
+    return None
+
+
+def round_human_readable(x, up=False, tostring=True):
+    """Round off `x` within a human readable form."""
+    round_off = round_up if up else round_down
+    # Take 3 significant figures.
+    n = 10**(int(math.floor(math.log10(x))) - 2)
+    x = round_off(x, n)
+    # Find a good suffix which doesn't change the value.
+    xx = round_off(x, 1000**4)
+    if xx == x:
+        return '{0}T'.format(xx // 1000**4) if tostring else xx
+    xx = round_off(x, 1000**3)
+    if xx == x:
+        return '{0}G'.format(xx // 1000**3) if tostring else xx
+    xx = round_off(x, 1000**2)
+    if xx == x:
+        return '{0}M'.format(xx // 1000**2) if tostring else xx
+    xx = round_off(x, 1000)
+    if xx == x:
+        return '{0}K'.format(xx // 1000) if tostring else xx
+    return x
 
 
 class classproperty(property):  # noqa
@@ -322,8 +361,13 @@ def main():
 
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
-        usage='%(prog)s [options] [par=val].. [par+=int].. [par*=float]..'
+        usage='%(prog)s [options] [par=val].. [par+=int].. [par*=float]..',
+        add_help=False
     )
+    parser.add_argument('--help',
+                        action='store_const',
+                        const=True,
+                        help='show this help message and exit')
     parser.add_argument('-o',
                         '--output',
                         action='store',
@@ -347,10 +391,15 @@ def main():
                         action='store_const',
                         const=True,
                         help='print expected initial memory usage and exit')
+    parser.add_argument('-h',
+                        '---human-readable',
+                        action='store_const',
+                        const=True,
+                        help=('adjust to human-readable numbers '
+                              '(e.g., 1K, 23M, 456G)'))
     parser.add_argument('-n',
                         '--ncpus',
                         action='store',
-                        default=None,
                         type=int,
                         help=('number of cpus '
                               '(default: number of cpus in a node)'),
@@ -369,6 +418,11 @@ def main():
     args = parser.parse_args()
     pars = {}
 
+    # Help message.
+    if args.help:
+        parser.print_help()
+        exit(0)
+
     # Use 1 node for each job by default.
     ncpus = total_cpus // nnodes
     if ncpus < 2:
@@ -379,20 +433,6 @@ def main():
 
     sp = Setup()
     sp.threads = ncpus if ncpus >= 2 else -1
-
-    def metric_prefix(s):
-        s = s.lower()
-        if s == '':
-            return 1
-        if s == 'k':
-            return 1000
-        if s == 'm':
-            return 1000**2
-        if s == 'g':
-            return 1000**3
-        if s == 't':
-            return 1000**4
-        return None
 
     for a in args.args:
         m = re.match(r'([a-zA-Z][a-zA-Z0-9]*)([+*]?)=(.*)', a)
@@ -446,10 +486,10 @@ def main():
         print('-m{0}x{1}'.format(total_cpus // cpus, cpus))
         exit()
 
-    # Presumably increasing MaxTermSize requires increasing WorkSpace too.
+    # Presumably increasing MaxTermSize requires increasing WorkSpace, too.
     sp.workspace = max(sp.workspace, sp.maxtermsize * 250)
 
-    # Optimize the memory usage.
+    # Optimize the memory usage by bisection.
     max_iteration = 50
 
     sp0 = sp.copy()
@@ -462,6 +502,8 @@ def main():
         sp.termsinsmall = int(sp.termsinsmall * x)
         sp.scratchsize = int(sp.scratchsize * x)
         m = sp.calc()
+        if args.human_readable:
+            m = round_human_readable(m, True, False)
         return (- (memory - m), sp)
 
     x1 = 1.0
@@ -510,7 +552,10 @@ def main():
 
     # For --usage option.
     if args.usage:
-        print(f(x1)[1].calc())
+        m = f(x1)[1].calc()
+        if args.human_readable:
+            m = round_human_readable(m, True)
+        print(m)
         exit()
 
     # Output.
@@ -525,6 +570,8 @@ def main():
             if v == dic0[k]:
                 # Don't write when same as the default value.
                 continue
+            if args.human_readable:
+                v = round_human_readable(v, False)
             print('{0} {1}'.format(k, v), file=fi)
         for k, v in pars.items():
             print('{0} {1}'.format(k, v), file=fi)
@@ -532,3 +579,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
