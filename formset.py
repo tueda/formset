@@ -382,7 +382,7 @@ def main():
     """Entry point."""
     nnodes = SystemInfo.number_of_nodes
     total_cpus = SystemInfo.number_of_physical_cores
-    memory = int(SystemInfo.total_memory)
+    total_memory = SystemInfo.total_memory
 
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
@@ -500,7 +500,7 @@ def main():
 
     # Our resource.
     cpus = max(sp.threads, 1)
-    memory = int(memory * args.percentage * cpus / total_cpus)
+    memory = int(total_memory * args.percentage * cpus / total_cpus)
 
     # For --form option.
     if args.form:
@@ -586,6 +586,20 @@ def main():
 
     # Output.
     with open_w_or_stdout(args.output) as fi:
+        def round_memory(m):
+            return (round_human_readable(m, False)
+                    if args.human_readable else m)
+
+        print(('# {0}{1} (cpu: {2}, mem: {3}; '
+               'total cpu: {4}, total mem: {5})').format(
+            parser.prog,
+            (' ' if len(sys.argv) >= 2 else '') + ' '.join(sys.argv[1:]),
+            cpus,
+            round_memory(memory),
+            total_cpus,
+            round_memory(total_memory)
+        ), file=fi)
+
         sp = f(x1)[1]
         sp0 = Setup()  # default value
         dic0 = dict(sp0.items())
