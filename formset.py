@@ -386,7 +386,8 @@ def main():
 
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
-        usage='%(prog)s [options] [par=val].. [par+=int].. [par*=float]..',
+        usage=('%(prog)s [options] [--] '
+               '[par=val].. [par+=int].. [par*=float]..'),
         add_help=False
     )
     parser.add_argument('-h',
