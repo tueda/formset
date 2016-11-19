@@ -22,7 +22,32 @@ Example
 $ formset.py -o
 $ tform `formset.py -f` calcdia.frm
 $ minos `formset.py -m` minos.file
+
+Python versions
+---------------
+2.7, 3.2, 3.3, 3.4, 3.5
 """
+
+
+if 'check_output' not in dir(subprocess):
+    # For old systems where Python 2.6 + argparse available.
+    def check_output(*popenargs, **kwargs):
+        """Run a command."""
+        if 'stdout' in kwargs:  # pragma: no cover
+            raise ValueError('stdout argument not allowed, '
+                             'it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE,
+                                   *popenargs, **kwargs)
+        output, _ = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get('args')
+            if cmd is None:
+                cmd = popenargs[0]
+            # `output` keyword is not available in 2.6.
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+    subprocess.check_output = check_output
 
 
 @contextlib.contextmanager
@@ -127,7 +152,7 @@ class SystemInfo(object):
     def _get_cpu_info(cls):
         if cls._cpu_info is None:
             info = subprocess.check_output(['lscpu'])
-            info = info.decode(encoding='utf-8')
+            info = info.decode('utf-8')
             info = info.strip().split('\n')
             info = [[ss.strip() for ss in s.split(':')] for s in info]
             info = dict(info)
@@ -138,7 +163,7 @@ class SystemInfo(object):
     def _get_mem_info(cls):
         if cls._mem_info is None:
             info = subprocess.check_output(['free', '-b'])
-            info = info.decode(encoding='utf-8')
+            info = info.decode('utf-8')
             info = info.strip().split('\n')
             info = [[ss.strip() for ss in s.split(':')] for s in info]
             info = [s for s in info if len(s) == 2]
