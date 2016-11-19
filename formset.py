@@ -364,7 +364,8 @@ def main():
         usage='%(prog)s [options] [par=val].. [par+=int].. [par*=float]..',
         add_help=False
     )
-    parser.add_argument('--help',
+    parser.add_argument('-h',
+                        '--help',
                         action='store_const',
                         const=True,
                         help='show this help message and exit')
@@ -391,7 +392,7 @@ def main():
                         action='store_const',
                         const=True,
                         help='print expected initial memory usage and exit')
-    parser.add_argument('-h',
+    parser.add_argument('-H',
                         '---human-readable',
                         action='store_const',
                         const=True,
