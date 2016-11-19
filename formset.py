@@ -180,7 +180,7 @@ class Setup(object):
         """Construct a set of setup parameters."""
         self.compresssize = 90000
         self.filepatches = 256
-        self.hidesize = 50000000
+        self.hidesize = 0
         self.largepatches = 256
         self.largesize = 50000000
         self.maxtermsize = 40000  # 64-bit
