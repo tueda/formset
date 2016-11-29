@@ -424,12 +424,22 @@ def main():
                         const=True,
                         help=('adjust to human-readable numbers '
                               '(e.g., 1K, 23M, 456G)'))
+    parser.add_argument('-1',
+                        '--one',
+                        action='store_const',
+                        const=-1,
+                        dest='ncpus',
+                        help='use cpus in a node (default)')
+    parser.add_argument('--full',
+                        action='store_const',
+                        const=-99999,
+                        dest='ncpus',
+                        help='use cpus in all nodes')
     parser.add_argument('-n',
                         '--ncpus',
                         action='store',
                         type=int,
-                        help=('number of cpus '
-                              '(default: number of cpus in a node)'),
+                        help='use N cpus',
                         metavar='N')
     parser.add_argument('-p',
                         '--percentage',
@@ -450,13 +460,16 @@ def main():
         parser.print_help()
         exit(0)
 
-    # Use 1 node for each job by default.
-    ncpus = total_cpus // nnodes
-    if ncpus < 2:
-        ncpus = max(ncpus, total_cpus)
-    # Can be overwritten.
     if args.ncpus is not None:
         ncpus = args.ncpus
+    else:
+        # Use 1 node for each job by default.
+        ncpus = -1
+    if ncpus < 0:
+        # Use (-ncpus) nodes.
+        ncpus = -ncpus * (total_cpus // nnodes)
+    ncpus = max(ncpus, 1)
+    ncpus = min(ncpus, total_cpus)
 
     sp = Setup()
     sp.threads = ncpus if ncpus >= 2 else -1
