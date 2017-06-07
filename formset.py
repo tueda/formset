@@ -595,7 +595,7 @@ def main():
     x2 = None
     y1 = f(x1)[0]
     y2 = None
-    for i in range(max_iteration):
+    for _i in range(max_iteration):
         if x2 is None:
             if y1 < 0:
                 x = x1 * 2.0
@@ -650,13 +650,15 @@ def main():
                     if args.human_readable else m)
 
         print(('# {0}{1} (cpu: {2}, mem: {3}; '
-               'total cpu: {4}, total mem: {5})').format(
+               'total cpu: {4}, total mem: {5}; {6}x{7})').format(
             parser.prog,
             (' ' if len(sys.argv) >= 2 else '') + ' '.join(sys.argv[1:]),
             cpus,
             round_memory(memory),
             total_cpus,
-            round_memory(total_memory)
+            round_memory(total_memory),
+            total_cpus // cpus,
+            cpus,
         ), file=fi)
 
         sp = f(x1)[1]
