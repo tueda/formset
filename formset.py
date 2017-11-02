@@ -10,6 +10,7 @@ import argparse
 import contextlib
 import copy
 import math
+import os
 import re
 import subprocess
 import sys
@@ -54,12 +55,17 @@ if 'check_output' not in dir(subprocess):
 def open_w_or_stdout(filename=None):
     """Context manager for a file or stdout."""
     if filename:
-        f = open(filename, 'w')
+        # See https://stackoverflow.com/a/2333979.
+        tmpfilename = '{0}.tmp{1}'.format(filename, os.getpid())
+        f = open(tmpfilename, 'w')
     else:
         f = sys.stdout
     yield f
     if filename:
+        f.flush()
+        os.fsync(f.fileno())
         f.close()
+        os.rename(tmpfilename, filename)
 
 
 def round_down(x, n):
@@ -86,6 +92,17 @@ def metric_prefix(s):
     if s == 't':
         return 1000**4
     return None
+
+
+def parse_number(s):
+    """Parse a string as a number with a possible metric prefix."""
+    scale = 1
+    m = re.match(r'(.*)([kmgtKMGT])$', s)
+    if m:
+        s = m.group(1)
+        scale = metric_prefix(m.group(2))
+    # May raise ValueError.
+    return int(float(s) * scale)
 
 
 def round_human_readable(x, up=False, tostring=True):
@@ -124,6 +141,8 @@ class SystemInfo(object):
     _cpu_info = None
     _mem_info = None
 
+    verbose = False
+
     @classproperty
     def number_of_nodes(cls):  # noqa
         """Return the number of nodes."""
@@ -151,6 +170,8 @@ class SystemInfo(object):
     @classmethod
     def _get_cpu_info(cls):
         if cls._cpu_info is None:
+            if cls.verbose:
+                sys.stderr.write('running lscpu...\n')
             info = subprocess.check_output(['lscpu'])
             info = info.decode('utf-8')
             info = info.strip().split('\n')
@@ -162,6 +183,8 @@ class SystemInfo(object):
     @classmethod
     def _get_mem_info(cls):
         if cls._mem_info is None:
+            if cls.verbose:
+                sys.stderr.write('running free...\n')
             info = subprocess.check_output(['free', '-b'])
             info = info.decode('utf-8')
             info = info.strip().split('\n')
@@ -380,10 +403,6 @@ class Setup(object):
 
 def main():
     """Entry point."""
-    nnodes = SystemInfo.number_of_nodes
-    total_cpus = SystemInfo.number_of_physical_cores
-    total_memory = SystemInfo.total_memory
-
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
         usage=('%(prog)s [options] [--] '
@@ -429,12 +448,12 @@ def main():
                         action='store_const',
                         const=-1,
                         dest='ncpus',
-                        help='use cpus in a node (default)')
+                        help='use cpus in a node on the machine (default)')
     parser.add_argument('--full',
                         action='store_const',
                         const=-99999,
                         dest='ncpus',
-                        help='use cpus in all nodes')
+                        help='use cpus in all nodes on the machine')
     parser.add_argument('-n',
                         '--ncpus',
                         action='store',
@@ -449,17 +468,50 @@ def main():
                         help=('percentage of initial memory usage '
                               '(default: 0.75)'),
                         metavar='N')
+    parser.add_argument('--total-cpus',
+                        action='store',
+                        type=int,
+                        help='specify the total cpus on the machine')
+    parser.add_argument('--total-memory',
+                        action='store',
+                        help='specify the total memory on the machine')
+    parser.add_argument('-v',
+                        '--verbose',
+                        action='store_const',
+                        const=True,
+                        help='verbose output')
     parser.add_argument('args',
                         nargs='*',
                         help=argparse.SUPPRESS)
     args = parser.parse_args()
     pars = {}
 
+    # NOTE: when all of `--ncpus`, `--total-cpus` and `--total-memory` are
+    # specified, we don't need to access the system information.
+
+    if args.verbose:
+        SystemInfo.verbose = True
+
+    if args.total_cpus:
+        total_cpus = args.total_cpus
+    else:
+        total_cpus = SystemInfo.number_of_physical_cores
+
+    if args.total_memory:
+        try:
+            total_memory = parse_number(args.total_memory)
+        except ValueError:
+            parser.error('non-integer value for total memory: {0}'.format(
+                args.total_memory))
+    else:
+        total_memory = SystemInfo.total_memory
+
     # Help message.
     if args.help:
         parser.print_help()
         exit(0)
 
+    # Number of CPUs.
     if args.ncpus is not None:
         ncpus = args.ncpus
     else:
@@ -467,7 +519,7 @@ def main():
         ncpus = -1
     if ncpus < 0:
         # Use (-ncpus) nodes.
-        ncpus = -ncpus * (total_cpus // nnodes)
+        ncpus = -ncpus * (total_cpus // SystemInfo.number_of_nodes)
     ncpus = max(ncpus, 1)
     ncpus = min(ncpus, total_cpus)
 
@@ -483,30 +535,23 @@ def main():
             if par in sp.__dict__:
                 if ope == '' or ope == '+':
                     try:
-                        scale = 1
-                        m = re.match(r'(.*)([kmgtKMGT])$', val)
-                        if m:
-                            val = m.group(1)
-                            scale = metric_prefix(m.group(2))
-                        val = int(val) * scale
-                        if ope == '':
-                            setattr(sp, par, val)
-                        else:
-                            setattr(sp, par, getattr(sp, par) + val)
-                        continue
+                        val = parse_number(val)
                     except ValueError:
-                        pass
-                    parser.error(
-                        'non-integer value for parameter: {0}'.format(a))
+                        parser.error(
+                            'non-integer value for parameter: {0}'.format(a))
+                    if ope == '':
+                        setattr(sp, par, val)
+                    else:
+                        setattr(sp, par, getattr(sp, par) + val)
+                    continue
                 else:
                     try:
                         val = float(val)
-                        setattr(sp, par, int(getattr(sp, par) * val))
-                        continue
                     except ValueError:
-                        pass
-                    parser.error(
-                        'non-float value for parameter: {0}'.format(a))
+                        parser.error(
+                            'non-float value for parameter: {0}'.format(a))
+                    setattr(sp, par, int(getattr(sp, par) * val))
+                    continue
             elif ope == '':
                 pars[par] = val
                 continue
