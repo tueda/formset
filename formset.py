@@ -58,14 +58,15 @@ def open_w_or_stdout(filename=None):
         # See https://stackoverflow.com/a/2333979.
         tmpfilename = '{0}.tmp{1}'.format(filename, os.getpid())
         f = open(tmpfilename, 'w')
+        try:
+            yield f
+        finally:
+            f.flush()
+            os.fsync(f.fileno())
+            f.close()
+            os.rename(tmpfilename, filename)
     else:
-        f = sys.stdout
-    yield f
-    if filename:
-        f.flush()
-        os.fsync(f.fileno())
-        f.close()
-        os.rename(tmpfilename, filename)
+        yield sys.stdout
 
 
 def round_down(x, n):
