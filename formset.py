@@ -633,8 +633,8 @@ def main():
     if x2 is None:
         if x1 < 1.0e-12:
             x1 = 0
-        parser.exit('failed to find parameters: memory({0})={1}'.format(
-            x1, y1))
+        parser.exit(('failed to find parameters: memory({0}) = {1} '
+                     'bytes shortage').format(x1, y1))
 
     # For --usage option.
     if args.usage:
