@@ -408,6 +408,11 @@ def main():
     parser = argparse.ArgumentParser(
         usage=('%(prog)s [options] [--] '
                '[par=val].. [par+=int].. [par*=float]..'),
+        epilog=('On non-Linux systems, the number of physical CPUs and memory '
+                'available on the machine may be not automatically detected. '
+                'In such a case, one cannot use the default parameters '
+                'depending on those values and needs to explicitly specify '
+                '--ncpus, --total-cpus and --total-memory.'),
         add_help=False
     )
     parser.add_argument('-h',
@@ -427,19 +432,19 @@ def main():
                         '--form',
                         action='store_const',
                         const=True,
-                        help='print tform options and exit')
+                        help='print tform options (e.g., -w4) and exit')
     parser.add_argument('-m',
                         '--minos',
                         action='store_const',
                         const=True,
-                        help='print minos options and exit')
+                        help='print minos options (e.g., -m2x4) and exit')
     parser.add_argument('-u',
                         '--usage',
                         action='store_const',
                         const=True,
                         help='print expected initial memory usage and exit')
     parser.add_argument('-H',
-                        '---human-readable',
+                        '--human-readable',
                         action='store_const',
                         const=True,
                         help=('adjust to human-readable numbers '
@@ -472,10 +477,12 @@ def main():
     parser.add_argument('--total-cpus',
                         action='store',
                         type=int,
-                        help='specify the total cpus on the machine')
+                        help='specify the total cpus on the machine',
+                        metavar='N')
     parser.add_argument('--total-memory',
                         action='store',
-                        help='specify the total memory on the machine')
+                        help='specify the total memory on the machine',
+                        metavar='N')
     parser.add_argument('-v',
                         '--verbose',
                         action='store_const',
@@ -534,7 +541,9 @@ def main():
             ope = m.group(2)
             val = m.group(3)
             if par in sp.__dict__:
+                # Known parameter.
                 if ope == '' or ope == '+':
+                    # We have par=val or par+=int.
                     try:
                         val = parse_number(val)
                     except ValueError:
@@ -546,6 +555,7 @@ def main():
                         setattr(sp, par, getattr(sp, par) + val)
                     continue
                 else:
+                    # We have par*=float.
                     try:
                         val = float(val)
                     except ValueError:
@@ -554,6 +564,7 @@ def main():
                     setattr(sp, par, int(getattr(sp, par) * val))
                     continue
             elif ope == '':
+                # Unknown parameter given by par=val. Add it to the dictionary.
                 pars[par] = val
                 continue
         parser.error('unrecognized argument: {0}'.format(a))
