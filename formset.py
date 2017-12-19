@@ -148,7 +148,10 @@ class SystemInfo(object):
     def number_of_nodes(cls):  # noqa
         """Return the number of nodes."""
         info = cls._get_cpu_info()
-        return int(info['NUMA node(s)'])
+        if 'NUMA node(s)' in info:
+            return int(info['NUMA node(s)'])
+        else:
+            return 1
 
     @classproperty
     def number_of_cpus(cls):  # noqa
