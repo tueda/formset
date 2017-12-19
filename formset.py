@@ -464,10 +464,10 @@ def main():
     parser.add_argument('-p',
                         '--percentage',
                         action='store',
-                        default=0.75,
+                        default=75.0,
                         type=float,
                         help=('percentage of initial memory usage '
-                              '(default: 0.75)'),
+                              '(default: 75.0)'),
                         metavar='N')
     parser.add_argument('--total-cpus',
                         action='store',
@@ -560,7 +560,7 @@ def main():
 
     # Our resource.
     cpus = max(sp.threads, 1)
-    memory = int(total_memory * args.percentage * cpus / total_cpus)
+    memory = int(total_memory * args.percentage / 100.0 * cpus / total_cpus)
 
     # For --form option.
     if args.form:
