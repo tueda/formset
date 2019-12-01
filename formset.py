@@ -15,6 +15,30 @@ import re
 import subprocess
 import sys
 
+try:
+    from typing import TYPE_CHECKING
+except ImportError:
+    TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import (
+        Any,
+        Dict,
+        Iterator,
+        List,
+        Optional,
+        TextIO,
+        Tuple,
+        Union,
+        overload,
+    )
+    from typing_extensions import Literal
+else:
+
+    def overload(f):  # noqa: D103
+        return None
+
+
 __doc__ = """\
 Generate form.set suited for the local machine.
 
@@ -32,11 +56,11 @@ Python versions
 
 if "check_output" not in dir(subprocess):
     # For old systems where Python 2.6 + argparse available.
-    def check_output(*popenargs, **kwargs):
+    def check_output(*popenargs, **kwargs):  # type: ignore
         """Run a command."""
         if "stdout" in kwargs:  # pragma: no cover
             raise ValueError("stdout argument not allowed, " "it will be overridden.")
-        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)  # type: ignore  # noqa: E501
         output, _ = process.communicate()
         retcode = process.poll()
         if retcode:
@@ -52,6 +76,7 @@ if "check_output" not in dir(subprocess):
 
 @contextlib.contextmanager
 def open_w_or_stdout(filename=None):
+    # type: (Optional[str]) -> Iterator[TextIO]
     """Context manager for a file or stdout."""
     if filename:
         # See https://stackoverflow.com/a/2333979.
@@ -69,18 +94,22 @@ def open_w_or_stdout(filename=None):
 
 
 def round_down(x, n):
+    # type: (int, int) -> int
     """Round down `x` to nearest `n`."""
     return x // n * n
 
 
 def round_up(x, n):
+    # type: (int, int) -> int
     """Round up `x` to nearest `n`."""
     return (x + (n - 1)) // n * n
 
 
 def metric_prefix(s):
+    # type: (str) -> int
     """Parse a metric prefix as a number."""
-    s = s.lower()
+    s_old = s
+    s = s.strip().lower()
     if s == "":
         return 1
     if s == "k":
@@ -91,21 +120,35 @@ def metric_prefix(s):
         return 1000 ** 3
     if s == "t":
         return 1000 ** 4
-    return None
+    raise ValueError("unknown metric prefix: {0}".format(s_old))
 
 
 def parse_number(s):
+    # type: (str) -> int
     """Parse a string as a number with a possible metric prefix."""
     scale = 1
     m = re.match(r"(.*)([kmgtKMGT])$", s)
     if m:
         s = m.group(1)
         scale = metric_prefix(m.group(2))
-    # May raise ValueError.
+    # May raise ValueError for bad `s`.
     return int(float(s) * scale)
 
 
-def round_human_readable(x, up=False, tostring=True):
+@overload
+def round_human_readable(x, up, tostring):  # noqa: D103
+    # type: (int, bool, Literal[True]) -> str
+    pass
+
+
+@overload  # noqa: F811
+def round_human_readable(x, up, tostring):  # noqa: D103
+    # type: (int, bool, Literal[False]) -> int
+    pass
+
+
+def round_human_readable(x, up, tostring):  # noqa: F811
+    # type: (int, bool, bool) -> Union[int, str]
     """Round off `x` within a human readable form."""
     round_off = round_up if up else round_down
     # Take 3 significant figures.
@@ -127,10 +170,11 @@ def round_human_readable(x, up=False, tostring=True):
     return x
 
 
-class classproperty(property):  # noqa
+class classproperty(property):  # noqa: N801
     """Decorator to make a property of a class."""
 
-    def __get__(self, cls, owner):
+    def __get__(self, cls, owner=None):
+        # type: (Any, Optional[type]) -> Any
         """Getter."""
         return classmethod(self.fget).__get__(None, owner)()
 
@@ -138,13 +182,14 @@ class classproperty(property):  # noqa
 class SystemInfo(object):
     """System information."""
 
-    _cpu_info = None
-    _mem_info = None
+    _cpu_info = None  # type: Optional[Dict[str, str]]
+    _mem_info = None  # type: Optional[Dict[str, List[str]]]
 
     verbose = False
 
     @classproperty
-    def number_of_nodes(cls):  # noqa
+    def number_of_nodes(cls):  # noqa: N805
+        # type: () -> int
         """Return the number of nodes."""
         info = cls._get_cpu_info()
         if "NUMA node(s)" in info:
@@ -153,49 +198,51 @@ class SystemInfo(object):
             return 1
 
     @classproperty
-    def number_of_cpus(cls):  # noqa
+    def number_of_cpus(cls):  # noqa: N805
+        # type: () -> int
         """Return the number of cpus."""
         info = cls._get_cpu_info()
         return int(info["CPU(s)"])
 
     @classproperty
-    def number_of_physical_cores(cls):  # noqa
+    def number_of_physical_cores(cls):  # noqa: N805
+        # type: () -> int
         """Return the number of physical cores."""
         info = cls._get_cpu_info()
         return int(info["Socket(s)"]) * int(info["Core(s) per socket"])
 
     @classproperty
-    def total_memory(cls):  # noqa
+    def total_memory(cls):  # noqa: N805
+        # type: () -> int
         """Return the total physical memory in bytes."""
         info = cls._get_mem_info()
         return int(info["Mem"][0])
 
     @classmethod
     def _get_cpu_info(cls):
+        # type: () -> Dict[str, str]
         if cls._cpu_info is None:
             if cls.verbose:
                 sys.stderr.write("running lscpu...\n")
-            info = subprocess.check_output(["lscpu"])
-            info = info.decode("utf-8")
-            info = info.strip().split("\n")
-            info = [[ss.strip() for ss in s.split(":")] for s in info]
-            info = dict(info)
-            cls._cpu_info = info
+            info = subprocess.check_output(["lscpu"]).decode("utf-8")
+            info_list = info.strip().split("\n")
+            info_list_list = [[ss.strip() for ss in s.split(":")] for s in info_list]
+            info_items = [(s[0], s[1]) for s in info_list_list]
+            cls._cpu_info = dict(info_items)
         return cls._cpu_info
 
     @classmethod
     def _get_mem_info(cls):
+        # type: () -> Dict[str, List[str]]
         if cls._mem_info is None:
             if cls.verbose:
                 sys.stderr.write("running free...\n")
-            info = subprocess.check_output(["free", "-b"])
-            info = info.decode("utf-8")
-            info = info.strip().split("\n")
-            info = [[ss.strip() for ss in s.split(":")] for s in info]
-            info = [s for s in info if len(s) == 2]
-            info = [[s[0], s[1].split()] for s in info]
-            info = dict(info)
-            cls._mem_info = info
+            info = subprocess.check_output(["free", "-b"]).decode("utf-8")
+            info_list = info.strip().split("\n")
+            info_list_list = [[ss.strip() for ss in s.split(":")] for s in info_list]
+            info_pairs = [s for s in info_list_list if len(s) == 2]
+            info_items = [(s[0], s[1].split()) for s in info_pairs]
+            cls._mem_info = dict(info_items)
         return cls._mem_info
 
 
@@ -203,6 +250,7 @@ class Setup(object):
     """Setup parameters."""
 
     def __init__(self):
+        # type: () -> None
         """Construct a set of setup parameters."""
         self.compresssize = 90000
         self.filepatches = 256
@@ -245,22 +293,26 @@ class Setup(object):
         self._wordsize = 4
 
     def items(self):
+        # type: () -> Tuple[Tuple[str, int]]
         """Return pairs of parameters and values."""
         items = [(k, v) for (k, v) in self.__dict__.items() if k[0] != "_"]
         items.sort()
-        return tuple(items)
+        return tuple(items)  # type: ignore
 
     def __str__(self):
-        """Return the string representaiton."""
+        # type: () -> str
+        """Return the string representation."""
         mem = self.calc()
         params = ["{0}: {1}".format(k, v) for (k, v) in self.items()]
         return "<Setup: {0} bytes, {1}>".format(mem, ", ".join(params))
 
     def copy(self):
+        # type: () -> Setup
         """Return a shallow copy."""
         return copy.copy(self)
 
     def calc(self):
+        # type: () -> int
         """Return an estimation of memory usage."""
         self.maxtermsize = max(self.maxtermsize, 200)
 
@@ -409,6 +461,7 @@ class Setup(object):
         filepatches,
         sortiosize,
     ):
+        # type: (int, int, int, int, int, int, int) -> int
 
         filepatches = max(filepatches, 4)
 
@@ -442,6 +495,7 @@ class Setup(object):
 
 
 def main():
+    # type: () -> None
     """Entry point."""
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
@@ -643,6 +697,7 @@ def main():
     sp0 = sp.copy()
 
     def f(x):
+        # type: (float) -> Tuple[int, Setup]
         # Hopefully monochrome increasing.
         sp = sp0.copy()
         sp.smallsize = int(sp.smallsize * x)
@@ -655,9 +710,9 @@ def main():
         return (-(memory - m), sp)
 
     x1 = 1.0
-    x2 = None
+    x2 = None  # type: Optional[float]
     y1 = f(x1)[0]
-    y2 = None
+    y2 = None  # type: Optional[int]
     for _i in range(max_iteration):
         if x2 is None:
             if y1 < 0:
@@ -690,30 +745,35 @@ def main():
                 x2 = x
                 y2 = y
         if x2 is not None:
+            assert y2 is not None
             assert x1 < x2 and y1 < y2
 
     if x2 is None:
         if x1 < 1.0e-12:
             x1 = 0
         parser.exit(
+            -1,
             ("failed to find parameters: memory({0}) = {1} " "bytes shortage").format(
                 x1, y1
-            )
+            ),
         )
 
     # For --usage option.
     if args.usage:
-        m = f(x1)[1].calc()
+        memory_usage = f(x1)[1].calc()
         if args.human_readable:
-            m = round_human_readable(m, True)
-        print(m)
+            memory_usage_str = round_human_readable(memory_usage, True, True)
+        else:
+            memory_usage_str = str(memory_usage)
+        print(memory_usage_str)
         exit()
 
     # Output.
     with open_w_or_stdout(args.output) as fi:
 
         def round_memory(m):
-            return round_human_readable(m, False) if args.human_readable else m
+            # type: (int) -> Union[int, str]
+            return round_human_readable(m, False, True) if args.human_readable else m
 
         print(
             (
@@ -743,8 +803,10 @@ def main():
                 # Don't write when same as the default value.
                 continue
             if args.human_readable:
-                v = round_human_readable(v, False)
-            print("{0} {1}".format(k, v), file=fi)
+                v_str = round_human_readable(v, False, True)
+            else:
+                v_str = str(v)
+            print("{0} {1}".format(k, v_str), file=fi)
         for k, v in pars.items():
             print("{0} {1}".format(k, v), file=fi)
 
