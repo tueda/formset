@@ -30,24 +30,23 @@ Python versions
 """
 
 
-if 'check_output' not in dir(subprocess):
+if "check_output" not in dir(subprocess):
     # For old systems where Python 2.6 + argparse available.
     def check_output(*popenargs, **kwargs):
         """Run a command."""
-        if 'stdout' in kwargs:  # pragma: no cover
-            raise ValueError('stdout argument not allowed, '
-                             'it will be overridden.')
-        process = subprocess.Popen(stdout=subprocess.PIPE,
-                                   *popenargs, **kwargs)
+        if "stdout" in kwargs:  # pragma: no cover
+            raise ValueError("stdout argument not allowed, " "it will be overridden.")
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
         output, _ = process.communicate()
         retcode = process.poll()
         if retcode:
-            cmd = kwargs.get('args')
+            cmd = kwargs.get("args")
             if cmd is None:
                 cmd = popenargs[0]
             # `output` keyword is not available in 2.6.
             raise subprocess.CalledProcessError(retcode, cmd)
         return output
+
     subprocess.check_output = check_output
 
 
@@ -56,8 +55,8 @@ def open_w_or_stdout(filename=None):
     """Context manager for a file or stdout."""
     if filename:
         # See https://stackoverflow.com/a/2333979.
-        tmpfilename = '{0}.tmp{1}'.format(filename, os.getpid())
-        f = open(tmpfilename, 'w')
+        tmpfilename = "{0}.tmp{1}".format(filename, os.getpid())
+        f = open(tmpfilename, "w")
         try:
             yield f
         finally:
@@ -82,23 +81,23 @@ def round_up(x, n):
 def metric_prefix(s):
     """Parse a metric prefix as a number."""
     s = s.lower()
-    if s == '':
+    if s == "":
         return 1
-    if s == 'k':
+    if s == "k":
         return 1000
-    if s == 'm':
-        return 1000**2
-    if s == 'g':
-        return 1000**3
-    if s == 't':
-        return 1000**4
+    if s == "m":
+        return 1000 ** 2
+    if s == "g":
+        return 1000 ** 3
+    if s == "t":
+        return 1000 ** 4
     return None
 
 
 def parse_number(s):
     """Parse a string as a number with a possible metric prefix."""
     scale = 1
-    m = re.match(r'(.*)([kmgtKMGT])$', s)
+    m = re.match(r"(.*)([kmgtKMGT])$", s)
     if m:
         s = m.group(1)
         scale = metric_prefix(m.group(2))
@@ -110,21 +109,21 @@ def round_human_readable(x, up=False, tostring=True):
     """Round off `x` within a human readable form."""
     round_off = round_up if up else round_down
     # Take 3 significant figures.
-    n = 10**(int(math.floor(math.log10(x))) - 2)
+    n = 10 ** (int(math.floor(math.log10(x))) - 2)
     x = round_off(x, n)
     # Find a good suffix which doesn't change the value.
-    xx = round_off(x, 1000**4)
+    xx = round_off(x, 1000 ** 4)
     if xx == x:
-        return '{0}T'.format(xx // 1000**4) if tostring else xx
-    xx = round_off(x, 1000**3)
+        return "{0}T".format(xx // 1000 ** 4) if tostring else xx
+    xx = round_off(x, 1000 ** 3)
     if xx == x:
-        return '{0}G'.format(xx // 1000**3) if tostring else xx
-    xx = round_off(x, 1000**2)
+        return "{0}G".format(xx // 1000 ** 3) if tostring else xx
+    xx = round_off(x, 1000 ** 2)
     if xx == x:
-        return '{0}M'.format(xx // 1000**2) if tostring else xx
+        return "{0}M".format(xx // 1000 ** 2) if tostring else xx
     xx = round_off(x, 1000)
     if xx == x:
-        return '{0}K'.format(xx // 1000) if tostring else xx
+        return "{0}K".format(xx // 1000) if tostring else xx
     return x
 
 
@@ -148,8 +147,8 @@ class SystemInfo(object):
     def number_of_nodes(cls):  # noqa
         """Return the number of nodes."""
         info = cls._get_cpu_info()
-        if 'NUMA node(s)' in info:
-            return int(info['NUMA node(s)'])
+        if "NUMA node(s)" in info:
+            return int(info["NUMA node(s)"])
         else:
             return 1
 
@@ -157,29 +156,29 @@ class SystemInfo(object):
     def number_of_cpus(cls):  # noqa
         """Return the number of cpus."""
         info = cls._get_cpu_info()
-        return int(info['CPU(s)'])
+        return int(info["CPU(s)"])
 
     @classproperty
     def number_of_physical_cores(cls):  # noqa
         """Return the number of physical cores."""
         info = cls._get_cpu_info()
-        return int(info['Socket(s)']) * int(info['Core(s) per socket'])
+        return int(info["Socket(s)"]) * int(info["Core(s) per socket"])
 
     @classproperty
     def total_memory(cls):  # noqa
         """Return the total physical memory in bytes."""
         info = cls._get_mem_info()
-        return int(info['Mem'][0])
+        return int(info["Mem"][0])
 
     @classmethod
     def _get_cpu_info(cls):
         if cls._cpu_info is None:
             if cls.verbose:
-                sys.stderr.write('running lscpu...\n')
-            info = subprocess.check_output(['lscpu'])
-            info = info.decode('utf-8')
-            info = info.strip().split('\n')
-            info = [[ss.strip() for ss in s.split(':')] for s in info]
+                sys.stderr.write("running lscpu...\n")
+            info = subprocess.check_output(["lscpu"])
+            info = info.decode("utf-8")
+            info = info.strip().split("\n")
+            info = [[ss.strip() for ss in s.split(":")] for s in info]
             info = dict(info)
             cls._cpu_info = info
         return cls._cpu_info
@@ -188,11 +187,11 @@ class SystemInfo(object):
     def _get_mem_info(cls):
         if cls._mem_info is None:
             if cls.verbose:
-                sys.stderr.write('running free...\n')
-            info = subprocess.check_output(['free', '-b'])
-            info = info.decode('utf-8')
-            info = info.strip().split('\n')
-            info = [[ss.strip() for ss in s.split(':')] for s in info]
+                sys.stderr.write("running free...\n")
+            info = subprocess.check_output(["free", "-b"])
+            info = info.decode("utf-8")
+            info = info.strip().split("\n")
+            info = [[ss.strip() for ss in s.split(":")] for s in info]
             info = [s for s in info if len(s) == 2]
             info = [[s[0], s[1].split()] for s in info]
             info = dict(info)
@@ -247,15 +246,15 @@ class Setup(object):
 
     def items(self):
         """Return pairs of parameters and values."""
-        items = [(k, v) for (k, v) in self.__dict__.items() if k[0] != '_']
+        items = [(k, v) for (k, v) in self.__dict__.items() if k[0] != "_"]
         items.sort()
         return tuple(items)
 
     def __str__(self):
         """Return the string representaiton."""
         mem = self.calc()
-        params = ['{0}: {1}'.format(k, v) for (k, v) in self.items()]
-        return '<Setup: {0} bytes, {1}>'.format(mem, ', '.join(params))
+        params = ["{0}: {1}".format(k, v) for (k, v) in self.items()]
+        return "<Setup: {0} bytes, {1}>".format(mem, ", ".join(params))
 
     def copy(self):
         """Return a shallow copy."""
@@ -265,23 +264,26 @@ class Setup(object):
         """Return an estimation of memory usage."""
         self.maxtermsize = max(self.maxtermsize, 200)
 
-        self.compresssize = max(self.compresssize,
-                                2 * self.maxtermsize * self._wordsize)
-        self.sortiosize = max(self.sortiosize,
-                              self.maxtermsize * self._wordsize)
+        self.compresssize = max(
+            self.compresssize, 2 * self.maxtermsize * self._wordsize
+        )
+        self.sortiosize = max(self.sortiosize, self.maxtermsize * self._wordsize)
 
         # The strange factor WordSize**2 is used in the FORM source...
-        self.scratchsize = max(self.scratchsize,
-                               4 * self.maxtermsize * self._wordsize**2)
+        self.scratchsize = max(
+            self.scratchsize, 4 * self.maxtermsize * self._wordsize ** 2
+        )
         if self.hidesize > 0:
-            self.hidesize = max(self.hidesize,
-                                4 * self.maxtermsize * self._wordsize**2)
+            self.hidesize = max(
+                self.hidesize, 4 * self.maxtermsize * self._wordsize ** 2
+            )
 
-        self.threadscratchsize = max(self.threadscratchsize,
-                                     4 * self.maxtermsize * self._wordsize**2)
-        self.threadscratchoutsize = max(self.threadscratchoutsize,
-                                        4 * self.maxtermsize *
-                                        self._wordsize**2)
+        self.threadscratchsize = max(
+            self.threadscratchsize, 4 * self.maxtermsize * self._wordsize ** 2
+        )
+        self.threadscratchoutsize = max(
+            self.threadscratchoutsize, 4 * self.maxtermsize * self._wordsize ** 2
+        )
 
         # constraints in RecalcSetups()
 
@@ -293,8 +295,7 @@ class Setup(object):
         minimumnumberofterms = 10
         n = numberofblocksinsort * minimumnumberofterms
         if self.threads >= 0:
-            minbufsize = (self.threads * (1 + n) * self.maxtermsize *
-                          self._wordsize)
+            minbufsize = self.threads * (1 + n) * self.maxtermsize * self._wordsize
             if self.largesize + self.smallextension < minbufsize:
                 self.largesize = minbufsize - self.smallextension
 
@@ -302,8 +303,7 @@ class Setup(object):
 
         self.filepatches = max(self.filepatches, 4)
 
-        self.smallsize = max(self.smallsize,
-                             16 * self.maxtermsize * self._wordsize)
+        self.smallsize = max(self.smallsize, 16 * self.maxtermsize * self._wordsize)
 
         self.smallextension = max(self.smallextension, self.smallsize * 3 // 2)
 
@@ -311,29 +311,40 @@ class Setup(object):
             self.largesize = max(self.largesize, 2 * self.smallsize)
 
         compinc = 2
-        minbufsize = self.filepatches * (self.sortiosize +
-                                         (compinc + 2 * self.maxtermsize) *
-                                         self._wordsize)
+        minbufsize = self.filepatches * (
+            self.sortiosize + (compinc + 2 * self.maxtermsize) * self._wordsize
+        )
         if self.largesize + self.smallextension < minbufsize:
             if self.largesize == 0:
                 self.smallextension = minbufsize
             else:
                 self.largesize = minbufsize - self.smallextension
 
-        iotry = (((self.largesize + self.smallextension) // self.filepatches //
-                 self._wordsize) - 2 * self.maxtermsize - compinc)  # in words
+        iotry = (
+            (
+                (self.largesize + self.smallextension)
+                // self.filepatches
+                // self._wordsize
+            )
+            - 2 * self.maxtermsize
+            - compinc
+        )  # in words
         self.sortiosize = max(self.sortiosize, iotry)  # bytes vs. words??
 
         # Compute the memory usage.
 
         mem = 0
-        mem += (self.scratchsize * 2 + (self.hidesize
-                                        if self.hidesize > 0
-                                        else self.scratchsize))
+        mem += self.scratchsize * 2 + (
+            self.hidesize if self.hidesize > 0 else self.scratchsize
+        )
         mem += self.workspace * self._wordsize
         mem += (self.compresssize + 10) * self._wordsize
-        mem += (self.largesize + self.smallextension + 3 * self.termsinsmall *
-                self._ptrsize + self.sortiosize)
+        mem += (
+            self.largesize
+            + self.smallextension
+            + 3 * self.termsinsmall * self._ptrsize
+            + self.sortiosize
+        )
 
         storecachesize = self._possize * 2 * self._ptrsize + self._wordsize
         # ignore the padding
@@ -341,23 +352,30 @@ class Setup(object):
         mem += storecachesize * self.numstorecaches
 
         if self.threads >= 1:
-            mem += ((self.threadscratchoutsize + self.threadscratchsize * 2) *
-                    self.threads)
+            mem += (
+                self.threadscratchoutsize + self.threadscratchsize * 2
+            ) * self.threads
             mem += self.workspace * self._wordsize * self.threads
             mem += (self.compresssize + 10) * self._wordsize * self.threads
 
-            mem += self._thread_alloc_sort(self.largesize // self.threads,
-                                           self.smallsize // self.threads,
-                                           self.smallextension // self.threads,
-                                           self.termsinsmall,
-                                           self.largepatches,
-                                           self.filepatches // self.threads,
-                                           self.sortiosize) * self.threads
+            mem += (
+                self._thread_alloc_sort(
+                    self.largesize // self.threads,
+                    self.smallsize // self.threads,
+                    self.smallextension // self.threads,
+                    self.termsinsmall,
+                    self.largepatches,
+                    self.filepatches // self.threads,
+                    self.sortiosize,
+                )
+                * self.threads
+            )
 
             mem += storecachesize * self.numstorecaches * self.threads
 
-            sizethreadbuckets = ((self.threadbucketsize + 1) *
-                                 self.maxtermsize + 2) * self._wordsize
+            sizethreadbuckets = (
+                (self.threadbucketsize + 1) * self.maxtermsize + 2
+            ) * self._wordsize
             if self.threadbucketsize >= 250:
                 sizethreadbuckets //= 4
             elif self.threadbucketsize >= 90:
@@ -365,19 +383,32 @@ class Setup(object):
             elif self.threadbucketsize >= 40:
                 sizethreadbuckets //= 2
             sizethreadbuckets //= self._wordsize
-            mem += ((2 * sizethreadbuckets * self._wordsize +
-                    (self.threadbucketsize + 1) * self._possize) *
-                    2 * self.threads)
+            mem += (
+                (
+                    2 * sizethreadbuckets * self._wordsize
+                    + (self.threadbucketsize + 1) * self._possize
+                )
+                * 2
+                * self.threads
+            )
             if self.threads >= 3:
-                mem += ((self.workspace * self._wordsize // 8 +
-                        2 * self.maxtermsize * self._wordsize) *
-                        (self.threads - 2))
+                mem += (
+                    self.workspace * self._wordsize // 8
+                    + 2 * self.maxtermsize * self._wordsize
+                ) * (self.threads - 2)
 
         return mem
 
-    def _thread_alloc_sort(self, largesize, smallsize, smallextension,
-                           termsinsmall, largepatches, filepatches,
-                           sortiosize):
+    def _thread_alloc_sort(
+        self,
+        largesize,
+        smallsize,
+        smallextension,
+        termsinsmall,
+        largepatches,
+        filepatches,
+        sortiosize,
+    ):
 
         filepatches = max(filepatches, 4)
 
@@ -389,111 +420,129 @@ class Setup(object):
             largesize = max(largesize, 2 * smallsize)
 
         compinc = 2
-        minbufsize = filepatches * (sortiosize + (compinc +
-                                    2 * self.maxtermsize) * self._wordsize)
+        minbufsize = filepatches * (
+            sortiosize + (compinc + 2 * self.maxtermsize) * self._wordsize
+        )
         if largesize + smallextension < minbufsize:
             if largesize == 0:
                 smallextension = minbufsize
             else:
                 largesize = minbufsize - smallextension
 
-        iotry = (((largesize + smallextension) // filepatches //
-                 self._wordsize) - 2 * self.maxtermsize - compinc)  # in words
+        iotry = (
+            ((largesize + smallextension) // filepatches // self._wordsize)
+            - 2 * self.maxtermsize
+            - compinc
+        )  # in words
         sortiosize = max(sortiosize, iotry)  # bytes vs. words??
 
-        return (largesize + smallextension + 3 * termsinsmall * self._ptrsize +
-                sortiosize)
+        return (
+            largesize + smallextension + 3 * termsinsmall * self._ptrsize + sortiosize
+        )
 
 
 def main():
     """Entry point."""
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
-        usage=('%(prog)s [options] [--] '
-               '[par=val].. [par+=int].. [par*=float]..'),
-        epilog=('On non-Linux systems, the number of physical CPUs and memory '
-                'available on the machine may be not automatically detected. '
-                'In such a case, one cannot use the default parameters '
-                'depending on those values and needs to explicitly specify '
-                '--ncpus, --total-cpus and --total-memory.'),
-        add_help=False
+        usage=("%(prog)s [options] [--] " "[par=val].. [par+=int].. [par*=float].."),
+        epilog=(
+            "On non-Linux systems, the number of physical CPUs and memory "
+            "available on the machine may be not automatically detected. "
+            "In such a case, one cannot use the default parameters "
+            "depending on those values and needs to explicitly specify "
+            "--ncpus, --total-cpus and --total-memory."
+        ),
+        add_help=False,
     )
-    parser.add_argument('-h',
-                        '--help',
-                        action='store_const',
-                        const=True,
-                        help='show this help message and exit')
-    parser.add_argument('-o',
-                        '--output',
-                        action='store',
-                        nargs='?',
-                        const='form.set',
-                        help=('output to FILE (default: no (stdout), '
-                              'FILE=form.set)'),
-                        metavar='FILE')
-    parser.add_argument('-f',
-                        '--form',
-                        action='store_const',
-                        const=True,
-                        help='print tform options (e.g., -w4) and exit')
-    parser.add_argument('-m',
-                        '--minos',
-                        action='store_const',
-                        const=True,
-                        help='print minos options (e.g., -m2x4) and exit')
-    parser.add_argument('-u',
-                        '--usage',
-                        action='store_const',
-                        const=True,
-                        help='print expected initial memory usage and exit')
-    parser.add_argument('-H',
-                        '--human-readable',
-                        action='store_const',
-                        const=True,
-                        help=('adjust to human-readable numbers '
-                              '(e.g., 1K, 23M, 456G)'))
-    parser.add_argument('-1',
-                        '--one',
-                        action='store_const',
-                        const=-1,
-                        dest='ncpus',
-                        help='use cpus in a node on the machine (default)')
-    parser.add_argument('--full',
-                        action='store_const',
-                        const=-99999,
-                        dest='ncpus',
-                        help='use cpus in all nodes on the machine')
-    parser.add_argument('-n',
-                        '--ncpus',
-                        action='store',
-                        type=int,
-                        help='use N cpus',
-                        metavar='N')
-    parser.add_argument('-p',
-                        '--percentage',
-                        action='store',
-                        default=75.0,
-                        type=float,
-                        help=('percentage of initial memory usage '
-                              '(default: 75.0)'),
-                        metavar='N')
-    parser.add_argument('--total-cpus',
-                        action='store',
-                        type=int,
-                        help='specify the total cpus on the machine',
-                        metavar='N')
-    parser.add_argument('--total-memory',
-                        action='store',
-                        help='specify the total memory on the machine',
-                        metavar='N')
-    parser.add_argument('-v',
-                        '--verbose',
-                        action='store_const',
-                        const=True,
-                        help='verbose output')
-    parser.add_argument('args',
-                        nargs='*',
-                        help=argparse.SUPPRESS)
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="store_const",
+        const=True,
+        help="show this help message and exit",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        action="store",
+        nargs="?",
+        const="form.set",
+        help=("output to FILE (default: no (stdout), " "FILE=form.set)"),
+        metavar="FILE",
+    )
+    parser.add_argument(
+        "-f",
+        "--form",
+        action="store_const",
+        const=True,
+        help="print tform options (e.g., -w4) and exit",
+    )
+    parser.add_argument(
+        "-m",
+        "--minos",
+        action="store_const",
+        const=True,
+        help="print minos options (e.g., -m2x4) and exit",
+    )
+    parser.add_argument(
+        "-u",
+        "--usage",
+        action="store_const",
+        const=True,
+        help="print expected initial memory usage and exit",
+    )
+    parser.add_argument(
+        "-H",
+        "--human-readable",
+        action="store_const",
+        const=True,
+        help=("adjust to human-readable numbers " "(e.g., 1K, 23M, 456G)"),
+    )
+    parser.add_argument(
+        "-1",
+        "--one",
+        action="store_const",
+        const=-1,
+        dest="ncpus",
+        help="use cpus in a node on the machine (default)",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_const",
+        const=-99999,
+        dest="ncpus",
+        help="use cpus in all nodes on the machine",
+    )
+    parser.add_argument(
+        "-n", "--ncpus", action="store", type=int, help="use N cpus", metavar="N"
+    )
+    parser.add_argument(
+        "-p",
+        "--percentage",
+        action="store",
+        default=75.0,
+        type=float,
+        help=("percentage of initial memory usage " "(default: 75.0)"),
+        metavar="N",
+    )
+    parser.add_argument(
+        "--total-cpus",
+        action="store",
+        type=int,
+        help="specify the total cpus on the machine",
+        metavar="N",
+    )
+    parser.add_argument(
+        "--total-memory",
+        action="store",
+        help="specify the total memory on the machine",
+        metavar="N",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_const", const=True, help="verbose output"
+    )
+    parser.add_argument("args", nargs="*", help=argparse.SUPPRESS)
     args = parser.parse_args()
     pars = {}
 
@@ -512,8 +561,9 @@ def main():
         try:
             total_memory = parse_number(args.total_memory)
         except ValueError:
-            parser.error('non-integer value for total memory: {0}'.format(
-                args.total_memory))
+            parser.error(
+                "non-integer value for total memory: {0}".format(args.total_memory)
+            )
     else:
         total_memory = SystemInfo.total_memory
 
@@ -538,21 +588,20 @@ def main():
     sp.threads = ncpus if ncpus >= 2 else -1
 
     for a in args.args:
-        m = re.match(r'([a-zA-Z][a-zA-Z0-9]*)([+*]?)=(.*)', a)
+        m = re.match(r"([a-zA-Z][a-zA-Z0-9]*)([+*]?)=(.*)", a)
         if m:
             par = m.group(1).lower()
             ope = m.group(2)
             val = m.group(3)
             if par in sp.__dict__:
                 # Known parameter.
-                if ope == '' or ope == '+':
+                if ope == "" or ope == "+":
                     # We have par=val or par+=int.
                     try:
                         val = parse_number(val)
                     except ValueError:
-                        parser.error(
-                            'non-integer value for parameter: {0}'.format(a))
-                    if ope == '':
+                        parser.error("non-integer value for parameter: {0}".format(a))
+                    if ope == "":
                         setattr(sp, par, val)
                     else:
                         setattr(sp, par, getattr(sp, par) + val)
@@ -562,15 +611,14 @@ def main():
                     try:
                         val = float(val)
                     except ValueError:
-                        parser.error(
-                            'non-float value for parameter: {0}'.format(a))
+                        parser.error("non-float value for parameter: {0}".format(a))
                     setattr(sp, par, int(getattr(sp, par) * val))
                     continue
-            elif ope == '':
+            elif ope == "":
                 # Unknown parameter given by par=val. Add it to the dictionary.
                 pars[par] = val
                 continue
-        parser.error('unrecognized argument: {0}'.format(a))
+        parser.error("unrecognized argument: {0}".format(a))
 
     # Our resource.
     cpus = max(sp.threads, 1)
@@ -578,12 +626,12 @@ def main():
 
     # For --form option.
     if args.form:
-        print('-w{0}'.format(cpus))
+        print("-w{0}".format(cpus))
         exit()
 
     # For --minos option.
     if args.minos:
-        print('-m{0}x{1}'.format(total_cpus // cpus, cpus))
+        print("-m{0}x{1}".format(total_cpus // cpus, cpus))
         exit()
 
     # Presumably increasing MaxTermSize requires increasing WorkSpace, too.
@@ -604,7 +652,7 @@ def main():
         m = sp.calc()
         if args.human_readable:
             m = round_human_readable(m, True, False)
-        return (- (memory - m), sp)
+        return (-(memory - m), sp)
 
     x1 = 1.0
     x2 = None
@@ -647,8 +695,11 @@ def main():
     if x2 is None:
         if x1 < 1.0e-12:
             x1 = 0
-        parser.exit(('failed to find parameters: memory({0}) = {1} '
-                     'bytes shortage').format(x1, y1))
+        parser.exit(
+            ("failed to find parameters: memory({0}) = {1} " "bytes shortage").format(
+                x1, y1
+            )
+        )
 
     # For --usage option.
     if args.usage:
@@ -660,27 +711,32 @@ def main():
 
     # Output.
     with open_w_or_stdout(args.output) as fi:
-        def round_memory(m):
-            return (round_human_readable(m, False)
-                    if args.human_readable else m)
 
-        print(('# {0}{1} (cpu: {2}, mem: {3}; '
-               'total cpu: {4}, total mem: {5}; {6}x{7})').format(
-            parser.prog,
-            (' ' if len(sys.argv) >= 2 else '') + ' '.join(sys.argv[1:]),
-            cpus,
-            round_memory(memory),
-            total_cpus,
-            round_memory(total_memory),
-            total_cpus // cpus,
-            cpus,
-        ), file=fi)
+        def round_memory(m):
+            return round_human_readable(m, False) if args.human_readable else m
+
+        print(
+            (
+                "# {0}{1} (cpu: {2}, mem: {3}; "
+                "total cpu: {4}, total mem: {5}; {6}x{7})"
+            ).format(
+                parser.prog,
+                (" " if len(sys.argv) >= 2 else "") + " ".join(sys.argv[1:]),
+                cpus,
+                round_memory(memory),
+                total_cpus,
+                round_memory(total_memory),
+                total_cpus // cpus,
+                cpus,
+            ),
+            file=fi,
+        )
 
         sp = f(x1)[1]
         sp0 = Setup()  # default value
         dic0 = dict(sp0.items())
         for k, v in sp.items():
-            if k == 'threads':
+            if k == "threads":
                 # 'threads N' doesn't work, must be given by tform option -wN.
                 continue
             if v == dic0[k]:
@@ -688,10 +744,10 @@ def main():
                 continue
             if args.human_readable:
                 v = round_human_readable(v, False)
-            print('{0} {1}'.format(k, v), file=fi)
+            print("{0} {1}".format(k, v), file=fi)
         for k, v in pars.items():
-            print('{0} {1}'.format(k, v), file=fi)
+            print("{0} {1}".format(k, v), file=fi)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
