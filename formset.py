@@ -249,9 +249,14 @@ class SystemInfo(object):
 class Setup(object):
     """Setup parameters."""
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, target):
+        # type: (Tuple[int, int, int]) -> None
         """Construct a set of setup parameters."""
+        self._target = target  # the target version (major, minor, patch).
+
+        # v4.2.0
+        # We take "WORDSIZE32" (64-bit) values.
+
         self.compresssize = 90000
         self.filepatches = 256
         self.hidesize = 0
@@ -291,6 +296,16 @@ class Setup(object):
         self._ptrsize = 8
         self._possize = 8
         self._wordsize = 4
+
+        if self._target >= (4, 2, 1):
+            # v4.2.1
+            # We take "WITHPTHREADS" (TFORM) values.
+            self.largesize = 1500000000
+            self.scratchsize = 500000000
+            self.smallextension = 600000000
+            self.smallsize = 300000000
+            self.sortiosize = 200000
+            self.termsinsmall = 3000000
 
     def items(self):
         # type: () -> Tuple[Tuple[str, int]]
@@ -581,6 +596,15 @@ def main():
         metavar="N",
     )
     parser.add_argument(
+        "-t",
+        "--target",
+        action="store",
+        default="4.2.1",
+        type=str,
+        help="target version of FORM (default: 4.2.1)",
+        metavar="VER",
+    )
+    parser.add_argument(
         "--total-cpus",
         action="store",
         type=int,
@@ -638,7 +662,19 @@ def main():
     ncpus = max(ncpus, 1)
     ncpus = min(ncpus, total_cpus)
 
-    sp = Setup()
+    # Target version.
+    target_input = args.target.split(".")
+    if len(target_input) > 3 or any(not x.isdigit() for x in target_input):
+        parser.error("invalid target version given: {0}".format(args.target))
+    if len(target_input) == 3:
+        target = (int(target_input[0]), int(target_input[1]), int(target_input[2]))
+    elif len(target_input) == 2:
+        target = (int(target_input[0]), int(target_input[1]), 0)
+    else:
+        target = (int(target_input[0]), 0, 0)
+
+    # Setup parameter in the arguments.
+    sp = Setup(target)
     sp.threads = ncpus if ncpus >= 2 else -1
 
     for a in args.args:
@@ -793,7 +829,7 @@ def main():
         )
 
         sp = f(x1)[1]
-        sp0 = Setup()  # default value
+        sp0 = Setup(target)  # default value
         dic0 = dict(sp0.items())
         for k, v in sp.items():
             if k == "threads":
