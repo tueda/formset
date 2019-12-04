@@ -224,7 +224,7 @@ class SystemInfo(object):
         if cls._cpu_info is None:
             if cls.verbose:
                 sys.stderr.write("running lscpu...\n")
-            info = subprocess.check_output(["lscpu"]).decode("utf-8")
+            info = subprocess.check_output(["lscpu"], env={"LANG": "C"}).decode("utf-8")
             info_list = info.strip().split("\n")
             info_list_list = [[ss.strip() for ss in s.split(":")] for s in info_list]
             info_items = [(s[0], s[1]) for s in info_list_list]
@@ -237,7 +237,9 @@ class SystemInfo(object):
         if cls._mem_info is None:
             if cls.verbose:
                 sys.stderr.write("running free...\n")
-            info = subprocess.check_output(["free", "-b"]).decode("utf-8")
+            info = subprocess.check_output(["free", "-b"], env={"LANG": "C"}).decode(
+                "utf-8"
+            )
             info_list = info.strip().split("\n")
             info_list_list = [[ss.strip() for ss in s.split(":")] for s in info_list]
             info_pairs = [s for s in info_list_list if len(s) == 2]
