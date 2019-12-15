@@ -142,7 +142,7 @@ def round_human_readable(x, up, tostring):  # noqa: D103
 
 
 @overload  # noqa: F811
-def round_human_readable(x, up, tostring):  # noqa: D103
+def round_human_readable(x, up, tostring):  # noqa: D103, F811
     # type: (int, bool, Literal[False]) -> int
     pass
 
