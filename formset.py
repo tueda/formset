@@ -32,6 +32,7 @@ if TYPE_CHECKING:
         Union,
         overload,
     )
+
     from typing_extensions import Literal
 else:
 
@@ -56,11 +57,13 @@ Python versions
 
 if "check_output" not in dir(subprocess):
     # For old systems where Python 2.6 + argparse available.
-    def check_output(*popenargs, **kwargs):  # type: ignore
+    def check_output(*popenargs, **kwargs):  # type: ignore[no-untyped-def]
         """Run a command."""
         if "stdout" in kwargs:  # pragma: no cover
             raise ValueError("stdout argument not allowed, " "it will be overridden.")
-        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)  # type: ignore  # noqa: E501
+        process = subprocess.Popen(  # type: ignore[call-overload]  # noqa: E501,S603
+            stdout=subprocess.PIPE, *popenargs, **kwargs
+        )
         output, _ = process.communicate()
         retcode = process.poll()
         if retcode:
@@ -224,7 +227,9 @@ class SystemInfo(object):
         if cls._cpu_info is None:
             if cls.verbose:
                 sys.stderr.write("running lscpu...\n")
-            info = subprocess.check_output(["lscpu"], env={"LANG": "C"}).decode("utf-8")
+            info = subprocess.check_output(  # noqa: S603,S607
+                ["lscpu"], env={"LANG": "C"}
+            ).decode("utf-8")
             info_list = info.strip().split("\n")
             info_list_list = [[ss.strip() for ss in s.split(":")] for s in info_list]
             info_items = [(s[0], s[1]) for s in info_list_list]
@@ -237,9 +242,9 @@ class SystemInfo(object):
         if cls._mem_info is None:
             if cls.verbose:
                 sys.stderr.write("running free...\n")
-            info = subprocess.check_output(["free", "-b"], env={"LANG": "C"}).decode(
-                "utf-8"
-            )
+            info = subprocess.check_output(  # noqa: S603,S607
+                ["free", "-b"], env={"LANG": "C"}
+            ).decode("utf-8")
             info_list = info.strip().split("\n")
             info_list_list = [[ss.strip() for ss in s.split(":")] for s in info_list]
             info_pairs = [s for s in info_list_list if len(s) == 2]
@@ -314,7 +319,7 @@ class Setup(object):
         """Return pairs of parameters and values."""
         items = [(k, v) for (k, v) in self.__dict__.items() if k[0] != "_"]
         items.sort()
-        return tuple(items)  # type: ignore
+        return tuple(items)  # type: ignore[return-value]
 
     def __str__(self):
         # type: () -> str
@@ -783,8 +788,13 @@ def main():
                 x2 = x
                 y2 = y
         if x2 is not None:
-            assert y2 is not None
-            assert x1 < x2 and y1 < y2
+            # sanity checks
+            if y2 is None:
+                raise AssertionError()
+            if x1 >= x2:
+                raise AssertionError()
+            if y1 >= y2:
+                raise AssertionError()
 
     if x2 is None:
         if x1 < 1.0e-12:
