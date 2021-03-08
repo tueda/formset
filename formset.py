@@ -537,6 +537,83 @@ class Setup(object):
             largesize + smallextension + 3 * termsinsmall * self._ptrsize + sortiosize
         )
 
+    def scale(self, total_memory, lowest_scale=0.0, human_readable=False):
+        # type: (int, float, bool) -> Tuple[Setup, float]
+        """
+        Scale to the given memory usage.
+
+        Search for a scaling of the given setup parameters that
+        results in the requested total memory usage. Return the
+        parameters and the scaling (with 1.0 meaning no scaling).
+        If the requested memory usage is too high, return the parameters
+        with the lowest possible usage, and 0.0 for scaling.
+        """
+        sp0 = self.copy()
+        # Presumably increasing MaxTermSize requires increasing WorkSpace, too.
+        sp0.workspace = max(sp0.workspace, sp0.maxtermsize * 250)
+
+        def f(x):
+            # type: (float) -> Tuple[int, Setup]
+            # Hopefully monotonically increasing.
+            sp = sp0.copy()
+            sp.smallsize = int(sp.smallsize * x)
+            sp.largesize = int(sp.largesize * x)
+            sp.termsinsmall = int(sp.termsinsmall * x)
+            sp.scratchsize = int(sp.scratchsize * x)
+            m = sp.calc()
+            if human_readable:
+                m = round_human_readable(m, True, False)
+            return (-(total_memory - m), sp)
+
+        miny, minsp = f(lowest_scale)
+        if miny >= 0:
+            return minsp, lowest_scale
+        # Optimize the memory usage by bisection.
+        max_iteration = 50
+        x1 = 1.0
+        x2 = None  # type: Optional[float]
+        y1 = f(x1)[0]
+        y2 = None  # type: Optional[int]
+        for _i in range(max_iteration):
+            if x2 is None:
+                if y1 < 0:
+                    x = x1 * 2.0
+                    y = f(x)[0]
+                    if y > 0:
+                        x2 = x
+                        y2 = y
+                    else:
+                        x1 = x
+                        y1 = y
+                else:
+                    x = x1 * 0.5
+                    y = f(x)[0]
+                    if y < 0:
+                        x2 = x1
+                        y2 = y1
+                        x1 = x
+                        y1 = y
+                    else:
+                        x1 = x
+                        y1 = y
+            else:
+                x = (x1 + x2) * 0.5
+                y = f(x)[0]
+                if y < 0:
+                    x1 = x
+                    y1 = y
+                else:
+                    x2 = x
+                    y2 = y
+            if x2 is not None:
+                if not (y2 is not None):
+                    raise AssertionError()
+                if not (x1 < x2):
+                    raise AssertionError()
+                if not (y1 < y2):
+                    raise AssertionError()
+        return f(x1)[1], x1
+
 
 def main():
     # type: () -> None
@@ -753,84 +830,21 @@ def main():
         print("-m{0}x{1}".format(total_cpus // cpus, cpus))
         exit()
 
-    # Presumably increasing MaxTermSize requires increasing WorkSpace, too.
-    sp.workspace = max(sp.workspace, sp.maxtermsize * 250)
+    sp, x = sp.scale(memory, human_readable=args.human_readable)
 
-    # Optimize the memory usage by bisection.
-    max_iteration = 50
+    # Final memory usage we've found.
+    memory_usage = sp.calc()
 
-    sp0 = sp.copy()
-
-    def f(x):
-        # type: (float) -> Tuple[int, Setup]
-        # Hopefully monochrome increasing.
-        sp = sp0.copy()
-        sp.smallsize = int(sp.smallsize * x)
-        sp.largesize = int(sp.largesize * x)
-        sp.termsinsmall = int(sp.termsinsmall * x)
-        sp.scratchsize = int(sp.scratchsize * x)
-        m = sp.calc()
-        if args.human_readable:
-            m = round_human_readable(m, True, False)
-        return (-(memory - m), sp)
-
-    x1 = 1.0
-    x2 = None  # type: Optional[float]
-    y1 = f(x1)[0]
-    y2 = None  # type: Optional[int]
-    for _i in range(max_iteration):
-        if x2 is None:
-            if y1 < 0:
-                x = x1 * 2.0
-                y = f(x)[0]
-                if y > 0:
-                    x2 = x
-                    y2 = y
-                else:
-                    x1 = x
-                    y1 = y
-            else:
-                x = x1 * 0.5
-                y = f(x)[0]
-                if y < 0:
-                    x2 = x1
-                    y2 = y1
-                    x1 = x
-                    y1 = y
-                else:
-                    x1 = x
-                    y1 = y
-        else:
-            x = (x1 + x2) * 0.5
-            y = f(x)[0]
-            if y < 0:
-                x1 = x
-                y1 = y
-            else:
-                x2 = x
-                y2 = y
-        if x2 is not None:
-            # sanity checks
-            if y2 is None:
-                raise AssertionError()
-            if x1 >= x2:
-                raise AssertionError()
-            if y1 >= y2:
-                raise AssertionError()
-
-    if x2 is None:
-        if x1 < 1.0e-12:
-            x1 = 0
+    if x < 1e-12:
         parser.exit(
             -1,
-            ("failed to find parameters: memory({0}) = {1} " "bytes shortage").format(
-                x1, y1
+            ("failed to find parameters: memory({0}) = {1} bytes shortage\n").format(
+                x, memory_usage - memory
             ),
         )
 
     # For --usage option.
     if args.usage:
-        memory_usage = f(x1)[1].calc()
         if args.human_readable:
             memory_usage_str = round_human_readable(memory_usage, True, True)
         else:
@@ -862,7 +876,6 @@ def main():
             file=fi,
         )
 
-        sp = f(x1)[1]
         sp0 = Setup(target)  # default value
         dic0 = dict(sp0.items())
         for k, v in sp.items():
