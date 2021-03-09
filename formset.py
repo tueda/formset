@@ -538,7 +538,7 @@ class Setup(object):
         )
 
     def scale(self, total_memory, lowest_scale=0.0, human_readable=False):
-        # type: (int, float, bool) -> Tuple[Setup, float]
+        # type: (int, float, bool) -> Setup
         """
         Scale to the given memory usage.
 
@@ -567,7 +567,7 @@ class Setup(object):
 
         miny, minsp = f(lowest_scale)
         if miny >= 0:
-            return minsp, lowest_scale
+            return minsp
         # Optimize the memory usage by bisection.
         max_iteration = 50
         x1 = 1.0
@@ -612,7 +612,7 @@ class Setup(object):
                     raise AssertionError()
                 if not (y1 < y2):
                     raise AssertionError()
-        return f(x1)[1], x1
+        return f(x1)[1]
 
 
 def main():
@@ -830,16 +830,19 @@ def main():
         print("-m{0}x{1}".format(total_cpus // cpus, cpus))
         exit()
 
-    sp, x = sp.scale(memory, human_readable=args.human_readable)
+    sp = sp.scale(memory, human_readable=args.human_readable)
 
     # Final memory usage we've found.
     memory_usage = sp.calc()
 
-    if x < 1e-12:
+    if memory_usage > memory:
+        shortage = memory_usage - memory
         parser.exit(
             -1,
-            ("failed to find parameters: memory({0}) = {1} bytes shortage\n").format(
-                x, memory_usage - memory
+            ("failed to find parameters: {0} bytes shortage\n").format(
+                round_human_readable(shortage, True, True)
+                if args.human_readable
+                else str(shortage)
             ),
         )
 
