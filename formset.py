@@ -543,10 +543,10 @@ class Setup(object):
         Scale to the given memory usage.
 
         Search for a scaling of the given setup parameters that
-        results in the requested total memory usage. Return the
-        parameters and the scaling (with 1.0 meaning no scaling).
-        If the requested memory usage is too high, return the parameters
-        with the lowest possible usage, and 0.0 for scaling.
+        results in the requested total memory usage, and return
+        the rescaled setup object. If the requested memory usage
+        is too high, return the parameters with the lowest
+        possible usage (scaled to lowest_scale).
         """
         sp0 = self.copy()
         # Presumably increasing MaxTermSize requires increasing WorkSpace, too.
