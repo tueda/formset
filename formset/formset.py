@@ -51,6 +51,7 @@ if TYPE_CHECKING:
         Iterator,
         List,
         Optional,
+        Sequence,
         TextIO,
         Tuple,
         Union,
@@ -617,9 +618,12 @@ class Setup(object):
         return f(x1)[1]
 
 
-def main():
-    # type: () -> None
+def main(args=None):
+    # type: (Optional[Sequence[str]]) -> None
     """Entry point."""
+    if args is None:
+        args = sys.argv[1:]
+
     # See https://bugs.python.org/issue22240, but the workaround given in that issue
     # gives a wrong result for console scripts.
     prog = os.path.basename(sys.argv[0])
@@ -736,38 +740,38 @@ def main():
         "-v", "--verbose", action="store_const", const=True, help="verbose output"
     )
     parser.add_argument("args", nargs="*", help=argparse.SUPPRESS)
-    args = parser.parse_args()
+    opts = parser.parse_args(args=args)
     pars = {}
 
     # NOTE: when all of `--ncpus`, `--total-cpus` and `--total-memory` are
     # specified, we don't need to access the system information.
 
-    if args.verbose:
+    if opts.verbose:
         SystemInfo.verbose = True
 
-    if args.total_cpus:
-        total_cpus = args.total_cpus
+    if opts.total_cpus:
+        total_cpus = opts.total_cpus
     else:
         total_cpus = SystemInfo.number_of_physical_cores
 
-    if args.total_memory:
+    if opts.total_memory:
         try:
-            total_memory = parse_number(args.total_memory)
+            total_memory = parse_number(opts.total_memory)
         except ValueError:
             parser.error(
-                "non-integer value for total memory: {0}".format(args.total_memory)
+                "non-integer value for total memory: {0}".format(opts.total_memory)
             )
     else:
         total_memory = SystemInfo.total_memory
 
     # Help message.
-    if args.help:
+    if opts.help:
         parser.print_help()
         exit(0)
 
     # Number of CPUs.
-    if args.ncpus is not None:
-        ncpus = args.ncpus
+    if opts.ncpus is not None:
+        ncpus = opts.ncpus
     else:
         # Use 1 node for each job by default.
         ncpus = -1
@@ -778,9 +782,9 @@ def main():
     ncpus = min(ncpus, total_cpus)
 
     # Target version.
-    target_input = args.target.split(".")
+    target_input = opts.target.split(".")
     if len(target_input) > 3 or any(not x.isdigit() for x in target_input):
-        parser.error("invalid target version given: {0}".format(args.target))
+        parser.error("invalid target version given: {0}".format(opts.target))
     if len(target_input) == 3:
         target = (int(target_input[0]), int(target_input[1]), int(target_input[2]))
     elif len(target_input) == 2:
@@ -792,7 +796,7 @@ def main():
     sp = Setup(target)
     sp.threads = ncpus if ncpus >= 2 else -1
 
-    for a in args.args:
+    for a in opts.args:
         m = re.match(r"([a-zA-Z][a-zA-Z0-9]*)([+*]?)=(.*)", a)
         if m:
             par = m.group(1).lower()
@@ -827,19 +831,19 @@ def main():
 
     # Our resource.
     cpus = max(sp.threads, 1)
-    memory = int(total_memory * args.percentage / 100.0 * cpus / total_cpus)
+    memory = int(total_memory * opts.percentage / 100.0 * cpus / total_cpus)
 
     # For --form option.
-    if args.form:
+    if opts.form:
         print("-w{0}".format(cpus))
         exit()
 
     # For --minos option.
-    if args.minos:
+    if opts.minos:
         print("-m{0}x{1}".format(total_cpus // cpus, cpus))
         exit()
 
-    sp = sp.scale(memory, human_readable=args.human_readable)
+    sp = sp.scale(memory, human_readable=opts.human_readable)
 
     # Final memory usage we've found.
     memory_usage = sp.calc()
@@ -850,14 +854,14 @@ def main():
             -1,
             ("failed to find parameters: {0} bytes shortage\n").format(
                 round_human_readable(shortage, True, True)
-                if args.human_readable
+                if opts.human_readable
                 else str(shortage)
             ),
         )
 
     # For --usage option.
-    if args.usage:
-        if args.human_readable:
+    if opts.usage:
+        if opts.human_readable:
             memory_usage_str = round_human_readable(memory_usage, True, True)
         else:
             memory_usage_str = str(memory_usage)
@@ -865,11 +869,11 @@ def main():
         exit()
 
     # Output.
-    with open_w_or_stdout(args.output) as fi:
+    with open_w_or_stdout(opts.output) as fi:
 
         def round_memory(m):
             # type: (int) -> Union[int, str]
-            return round_human_readable(m, False, True) if args.human_readable else m
+            return round_human_readable(m, False, True) if opts.human_readable else m
 
         print(
             (
@@ -897,7 +901,7 @@ def main():
             if v == dic0[k]:
                 # Don't write when same as the default value.
                 continue
-            if args.human_readable:
+            if opts.human_readable:
                 v_str = round_human_readable(v, False, True)
             else:
                 v_str = str(v)
