@@ -28,6 +28,8 @@ exec python "$0" "$@"
 
 from __future__ import print_function
 
+__version__ = "1.0.0-alpha.0"
+
 import argparse
 import contextlib
 import copy
@@ -618,8 +620,15 @@ class Setup(object):
 def main():
     # type: () -> None
     """Entry point."""
+    # See https://bugs.python.org/issue22240, but the workaround given in that issue
+    # gives a wrong result for console scripts.
+    prog = os.path.basename(sys.argv[0])
+    if prog == "__main__.py":
+        prog = __name__.split(".")[-1]
+
     # Parse the command line arguments.
     parser = argparse.ArgumentParser(
+        prog=prog,
         usage=("%(prog)s [options] [--] " "[par=val].. [par+=int].. [par*=float].."),
         epilog=(
             "On non-Linux systems, the number of physical CPUs and memory "
@@ -867,7 +876,7 @@ def main():
                 "# {0}{1} (cpu: {2}, mem: {3}; "
                 "total cpu: {4}, total mem: {5}; {6}x{7})"
             ).format(
-                parser.prog,
+                parser.prog + " " + __version__,
                 (" " if len(sys.argv) >= 2 else "") + " ".join(sys.argv[1:]),
                 cpus,
                 round_memory(memory),
