@@ -11,8 +11,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-16.04]
-        python-version: [2.6, 2.7, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9]
+        include:
+          - os: ubuntu-20.04
+            python-version: 2.6
+            deadsnake: true
+          - os: ubuntu-20.04
+            python-version: 2.7
+          - os: ubuntu-20.04
+            python-version: 3.2
+            deadsnake: true
+          - os: ubuntu-20.04
+            python-version: 3.3
+            deadsnake: true
+          - os: ubuntu-20.04
+            python-version: 3.4
+            deadsnake: true
+          - os: ubuntu-20.04
+            python-version: 3.5
+          - os: ubuntu-20.04
+            python-version: 3.6
+          - os: ubuntu-20.04
+            python-version: 3.7
+          - os: ubuntu-20.04
+            python-version: 3.8
+          - os: ubuntu-20.04
+            python-version: 3.9
+
+          - os: ubuntu-16.04
+            python-version: 3.5
+          - os: ubuntu-18.04
+            python-version: 3.6
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the repository
@@ -37,6 +65,13 @@ jobs:
 
       - name: Set up Python for testing
         uses: actions/setup-python@v2
+        if: "!matrix.deadsnake"
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python for testing (deadsnakes)
+        uses: deadsnakes/action@v2.1.1
+        if: "matrix.deadsnake"
         with:
           python-version: ${{ matrix.python-version }}
 
