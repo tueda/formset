@@ -12,18 +12,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-18.04
             python-version: 2.6
             deadsnake: true
           - os: ubuntu-20.04
             python-version: 2.7
-          - os: ubuntu-20.04
+          - os: ubuntu-18.04
             python-version: 3.2
             deadsnake: true
-          - os: ubuntu-20.04
+          - os: ubuntu-18.04
             python-version: 3.3
             deadsnake: true
-          - os: ubuntu-20.04
+          - os: ubuntu-18.04
             python-version: 3.4
             deadsnake: true
           - os: ubuntu-20.04
