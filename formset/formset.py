@@ -195,7 +195,7 @@ def round_human_readable(x, up, tostring):  # noqa: F811
     xx = round_off(x, 1000)
     if xx == x:
         return "{0}K".format(xx // 1000) if tostring else xx
-    return x
+    return str(x) if tostring else x
 
 
 class classproperty(property):  # noqa: N801
