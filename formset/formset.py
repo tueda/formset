@@ -767,7 +767,7 @@ def main(args=None):
     # Help message.
     if opts.help:
         parser.print_help()
-        exit(0)
+        return
 
     # Number of CPUs.
     if opts.ncpus is not None:
@@ -836,12 +836,12 @@ def main(args=None):
     # For --form option.
     if opts.form:
         print("-w{0}".format(cpus))
-        exit()
+        return
 
     # For --minos option.
     if opts.minos:
         print("-m{0}x{1}".format(total_cpus // cpus, cpus))
-        exit()
+        return
 
     sp = sp.scale(memory, human_readable=opts.human_readable)
 
@@ -866,7 +866,7 @@ def main(args=None):
         else:
             memory_usage_str = str(memory_usage)
         print(memory_usage_str)
-        exit()
+        return
 
     # Output.
     with open_w_or_stdout(opts.output) as fi:
