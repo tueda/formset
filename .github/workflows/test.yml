@@ -1,0 +1,56 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: 0 0 1 * * # monthly
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # To run Poetry with a non-default Python version,
+      # see https://github.com/Gr1N/setup-poetry/issues/8.
+
+      - name: Set up Python for Poetry
+        uses: actions/setup-python@v2
+
+      - name: Get Python path
+        id: python-path
+        run: echo "::set-output name=path::$(command -v python)"
+
+      - name: Set up Poetry
+        uses: Gr1N/setup-poetry@v4
+
+      - name: Get Poetry path
+        id: poetry-path
+        run: echo "::set-output name=path::$(command -v poetry)"
+
+      - name: Set up Python for testing
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set Python version called from Poetry
+        run: |
+          sed -i '1i#!${{ steps.python-path.outputs.path }}' '${{ steps.poetry-path.outputs.path }}'
+          poetry env use ${{ matrix.python-version }}
+          poetry run python --version
+
+      - name: Try the script
+        run: poetry run python formset/formset.py
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: poetry run pytest
