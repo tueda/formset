@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.0
     hooks:
     -   id: check-added-large-files
     -   id: check-case-conflict
@@ -13,11 +13,11 @@ repos:
     -   id: mixed-line-ending
     -   id: trailing-whitespace
 -   repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 2.3.4
+    rev: 2.3.5
     hooks:
     -   id: editorconfig-checker
 -   repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 21.5b1
     hooks:
     -   id: black
 -   repo: https://github.com/timothycrosley/isort
@@ -25,16 +25,16 @@ repos:
     hooks:
     -   id: isort
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.0
+    rev: 3.9.2
     hooks:
     -   id: flake8
         additional_dependencies:
         -   flake8-bandit==2.1.2
-        -   flake8-bugbear==21.3.2
+        -   flake8-bugbear==21.4.3
         -   flake8-builtins==1.5.3
-        -   flake8-comprehensions==3.4.0
+        -   flake8-comprehensions==3.5.0
         -   flake8-docstrings==1.6.0
-        -   flake8-pytest-style==1.4.0
+        -   flake8-pytest-style==1.4.1
         -   pep8-naming==0.11.1
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.812
@@ -42,6 +42,6 @@ repos:
     -   id: mypy
         args: []
 -   repo: https://github.com/jorisroovers/gitlint
-    rev: v0.15.0
+    rev: v0.15.1
     hooks:
     -   id: gitlint
