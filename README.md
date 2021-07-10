@@ -1,12 +1,25 @@
 formset
 =======
 
+[![Test](https://github.com/tueda/formset/workflows/Test/badge.svg?branch=main)](https://github.com/tueda/formset/actions?query=branch:main)
+[![PyPI version](https://badge.fury.io/py/formtools-formset.svg)](https://pypi.org/project/formtools-formset/)
+
 A `form.set` generator.
 
 This is a small script to generate a configuration file `form.set` of
 [FORM](https://www.nikhef.nl/~form/) for your machine.
 The script suggests adequate *static* buffer sizes for `tform` from
 the number of CPUs and physical memory available on the computer.
+
+
+Installation
+------------
+
+```sh
+pip install formtools-formset
+```
+
+You can also pick up the main script file [`formset.py`](https://raw.githubusercontent.com/tueda/formset/1.0.0rc1/formset/formset.py) manually.
 
 
 Usage
