@@ -204,7 +204,7 @@ class classproperty(property):  # noqa: N801
     def __get__(self, cls, owner=None):
         # type: (Any, Optional[type]) -> Any
         """Getter."""
-        return classmethod(self.fget).__get__(None, owner)()
+        return classmethod(self.fget).__get__(None, owner)()  # type: ignore[arg-type]
 
 
 class SystemInfo(object):
