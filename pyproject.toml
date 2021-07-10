@@ -1,20 +1,19 @@
 [tool.poetry]
-name = "formset"
+name = "formtools-formset"
 version = "1.0.0-alpha.0"
 description = "A form.set generator."
-authors = [
-    "Takahiro Ueda <tueda@st.seikei.ac.jp>",
-]
+authors = ["Takahiro Ueda <tueda@st.seikei.ac.jp>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/tueda/formset"
+packages = [{ include = "formset" }]
 
 [tool.poetry.scripts]
 formset = "formset.formset:main"
 
 [tool.poetry.dependencies]
 python = "~2.6 || ~2.7 || ^3.2"
-argparse = {version = "^1.4.0", python = "~2.6"}
+argparse = { version = "^1.4.0", python = "~2.6" }
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.2.5"
