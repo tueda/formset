@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "formtools-formset"
-version = "1.0.0rc2"
+version = "1.0.0-alpha.2"
 description = "A form.set generator."
 authors = ["Takahiro Ueda <tueda@st.seikei.ac.jp>"]
 license = "MIT"
