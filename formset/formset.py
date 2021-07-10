@@ -28,7 +28,7 @@ exec python "$0" "$@"
 
 from __future__ import print_function
 
-__version__ = "1.0.0-alpha.2"
+__version__ = "1.0.0"
 
 import argparse
 import contextlib

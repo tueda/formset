@@ -19,7 +19,7 @@ Installation
 pip install formtools-formset
 ```
 
-You can also pick up the main script file [`formset.py`](https://raw.githubusercontent.com/tueda/formset/1.0.0rc2/formset/formset.py) manually.
+You can also pick up the main script file [`formset.py`](https://raw.githubusercontent.com/tueda/formset/1.0.0/formset/formset.py) manually.
 
 
 Usage
