@@ -6,6 +6,15 @@ authors = ["Takahiro Ueda <tueda@st.seikei.ac.jp>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/tueda/formset"
+keywords = ["configuration", "form"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Utilities",
+]
 packages = [{ include = "formset" }]
 
 [tool.poetry.scripts]
