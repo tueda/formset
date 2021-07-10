@@ -18,22 +18,11 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v2
 
-      # To run Poetry with a non-default Python version,
-      # see https://github.com/Gr1N/setup-poetry/issues/8.
-
       - name: Set up Python for Poetry
         uses: actions/setup-python@v2
 
-      - name: Get Python path
-        id: python-path
-        run: echo "::set-output name=path::$(command -v python)"
-
       - name: Set up Poetry
-        uses: Gr1N/setup-poetry@v4
-
-      - name: Get Poetry path
-        id: poetry-path
-        run: echo "::set-output name=path::$(command -v poetry)"
+        uses: Gr1N/setup-poetry@v5
 
       - name: Set up Python for testing
         uses: actions/setup-python@v2
@@ -42,7 +31,6 @@ jobs:
 
       - name: Set Python version called from Poetry
         run: |
-          sed -i '1i#!${{ steps.python-path.outputs.path }}' '${{ steps.poetry-path.outputs.path }}'
           poetry env use ${{ matrix.python-version }}
           poetry run python --version
 
