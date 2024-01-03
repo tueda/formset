@@ -2,7 +2,7 @@
 name = "formtools-formset"
 version = "1.0.1-alpha.0"
 description = "A form.set generator."
-authors = ["Takahiro Ueda <tueda@st.seikei.ac.jp>"]
+authors = ["Takahiro Ueda <t.ueda.od@juntendo.ac.jp>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/tueda/formset"
