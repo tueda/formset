@@ -6,7 +6,7 @@ exec python "$0" "$@"
 
 # MIT License
 #
-# Copyright (c) 2021 Takahiro Ueda
+# Copyright (c) 2021-2024 Takahiro Ueda
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -143,11 +143,11 @@ def metric_prefix(s):
     if s == "k":
         return 1000
     if s == "m":
-        return 1000 ** 2
+        return 1000**2
     if s == "g":
-        return 1000 ** 3
+        return 1000**3
     if s == "t":
-        return 1000 ** 4
+        return 1000**4
     raise ValueError("unknown metric prefix: {0}".format(s_old))
 
 
@@ -183,15 +183,15 @@ def round_human_readable(x, up, tostring):  # noqa: F811
     n = 10 ** (int(math.floor(math.log10(x))) - 2)
     x = round_off(x, n)
     # Find a good suffix which doesn't change the value.
-    xx = round_off(x, 1000 ** 4)
+    xx = round_off(x, 1000**4)
     if xx == x:
-        return "{0}T".format(xx // 1000 ** 4) if tostring else xx
-    xx = round_off(x, 1000 ** 3)
+        return "{0}T".format(xx // 1000**4) if tostring else xx
+    xx = round_off(x, 1000**3)
     if xx == x:
-        return "{0}G".format(xx // 1000 ** 3) if tostring else xx
-    xx = round_off(x, 1000 ** 2)
+        return "{0}G".format(xx // 1000**3) if tostring else xx
+    xx = round_off(x, 1000**2)
     if xx == x:
-        return "{0}M".format(xx // 1000 ** 2) if tostring else xx
+        return "{0}M".format(xx // 1000**2) if tostring else xx
     xx = round_off(x, 1000)
     if xx == x:
         return "{0}K".format(xx // 1000) if tostring else xx
@@ -370,18 +370,18 @@ class Setup(object):
 
         # The strange factor WordSize**2 is used in the FORM source...
         self.scratchsize = max(
-            self.scratchsize, 4 * self.maxtermsize * self._wordsize ** 2
+            self.scratchsize, 4 * self.maxtermsize * self._wordsize**2
         )
         if self.hidesize > 0:
             self.hidesize = max(
-                self.hidesize, 4 * self.maxtermsize * self._wordsize ** 2
+                self.hidesize, 4 * self.maxtermsize * self._wordsize**2
             )
 
         self.threadscratchsize = max(
-            self.threadscratchsize, 4 * self.maxtermsize * self._wordsize ** 2
+            self.threadscratchsize, 4 * self.maxtermsize * self._wordsize**2
         )
         self.threadscratchoutsize = max(
-            self.threadscratchoutsize, 4 * self.maxtermsize * self._wordsize ** 2
+            self.threadscratchoutsize, 4 * self.maxtermsize * self._wordsize**2
         )
 
         # constraints in RecalcSetups()
