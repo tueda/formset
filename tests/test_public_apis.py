@@ -3,10 +3,10 @@ import formset
 try:
     from typing import TYPE_CHECKING
 except ImportError:
-    TYPE_CHECKING = False
+    TYPE_CHECKING = False  # type: ignore[misc]
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any  # noqa: F401
 
 
 def test_version():
@@ -21,7 +21,7 @@ def test_setup_scale():
 
     # accuracy test 1
 
-    mem = 10 ** 12  # 1T
+    mem = 10**12  # 1T
     sp = sp0.copy()
     sp = sp.scale(mem)
     usage = sp.calc()
@@ -30,9 +30,9 @@ def test_setup_scale():
 
     # accuracy test 2
 
-    mem = 10 ** 12  # 1T
+    mem = 10**12  # 1T
     sp = sp0.copy()
-    sp.maxtermsize = 10 ** 6
+    sp.maxtermsize = 10**6
     sp = sp.scale(mem)
     usage = sp.calc()
     assert usage <= mem
@@ -40,7 +40,7 @@ def test_setup_scale():
 
     # case with scaling < 1
 
-    mem = 16 * 10 ** 9  # 16G
+    mem = 16 * 10**9  # 16G
     sp = sp0.copy()
     sp.largesize = mem  # too big
     sp = sp.scale(mem)
@@ -49,7 +49,7 @@ def test_setup_scale():
 
     # lowest_scale test
 
-    mem = 16 * 10 ** 9  # 16G
+    mem = 16 * 10**9  # 16G
     sp = sp0.copy()
     sp.largesize = mem  # too big
     sp = sp.scale(mem, 1.0)

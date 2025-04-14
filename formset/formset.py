@@ -42,10 +42,10 @@ import sys
 try:
     from typing import TYPE_CHECKING
 except ImportError:
-    TYPE_CHECKING = False
+    TYPE_CHECKING = False  # type: ignore[misc]
 
 if TYPE_CHECKING:
-    from typing import (
+    from typing import (  # noqa: F401
         Any,
         Dict,
         Iterator,
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
         overload,
     )
 
-    from typing_extensions import Literal
+    from typing_extensions import Literal  # noqa: F401
 else:
 
     def overload(f):  # noqa: D103
@@ -87,7 +87,7 @@ if "check_output" not in dir(subprocess):
         if "stdout" in kwargs:  # pragma: no cover
             raise ValueError("stdout argument not allowed, " "it will be overridden.")
         process = subprocess.Popen(  # type: ignore[call-overload]  # noqa: E501,S603
-            stdout=subprocess.PIPE, *popenargs, **kwargs
+            *popenargs, stdout=subprocess.PIPE, **kwargs
         )
         output, _ = process.communicate()
         retcode = process.poll()
@@ -143,11 +143,11 @@ def metric_prefix(s):
     if s == "k":
         return 1000
     if s == "m":
-        return 1000 ** 2
+        return 1000**2
     if s == "g":
-        return 1000 ** 3
+        return 1000**3
     if s == "t":
-        return 1000 ** 4
+        return 1000**4
     raise ValueError("unknown metric prefix: {0}".format(s_old))
 
 
@@ -183,15 +183,15 @@ def round_human_readable(x, up, tostring):  # noqa: F811
     n = 10 ** (int(math.floor(math.log10(x))) - 2)
     x = round_off(x, n)
     # Find a good suffix which doesn't change the value.
-    xx = round_off(x, 1000 ** 4)
+    xx = round_off(x, 1000**4)
     if xx == x:
-        return "{0}T".format(xx // 1000 ** 4) if tostring else xx
-    xx = round_off(x, 1000 ** 3)
+        return "{0}T".format(xx // 1000**4) if tostring else xx
+    xx = round_off(x, 1000**3)
     if xx == x:
-        return "{0}G".format(xx // 1000 ** 3) if tostring else xx
-    xx = round_off(x, 1000 ** 2)
+        return "{0}G".format(xx // 1000**3) if tostring else xx
+    xx = round_off(x, 1000**2)
     if xx == x:
-        return "{0}M".format(xx // 1000 ** 2) if tostring else xx
+        return "{0}M".format(xx // 1000**2) if tostring else xx
     xx = round_off(x, 1000)
     if xx == x:
         return "{0}K".format(xx // 1000) if tostring else xx
@@ -370,18 +370,16 @@ class Setup(object):
 
         # The strange factor WordSize**2 is used in the FORM source...
         self.scratchsize = max(
-            self.scratchsize, 4 * self.maxtermsize * self._wordsize ** 2
+            self.scratchsize, 4 * self.maxtermsize * self._wordsize**2
         )
         if self.hidesize > 0:
-            self.hidesize = max(
-                self.hidesize, 4 * self.maxtermsize * self._wordsize ** 2
-            )
+            self.hidesize = max(self.hidesize, 4 * self.maxtermsize * self._wordsize**2)
 
         self.threadscratchsize = max(
-            self.threadscratchsize, 4 * self.maxtermsize * self._wordsize ** 2
+            self.threadscratchsize, 4 * self.maxtermsize * self._wordsize**2
         )
         self.threadscratchoutsize = max(
-            self.threadscratchoutsize, 4 * self.maxtermsize * self._wordsize ** 2
+            self.threadscratchoutsize, 4 * self.maxtermsize * self._wordsize**2
         )
 
         # constraints in RecalcSetups()
@@ -799,33 +797,33 @@ def main(args=None):
     for a in opts.args:
         m = re.match(r"([a-zA-Z][a-zA-Z0-9]*)([+*]?)=(.*)", a)
         if m:
-            par = m.group(1).lower()
-            ope = m.group(2)
-            val = m.group(3)
+            par = m.group(1).lower()  # type: str
+            ope = m.group(2)  # type: str
+            val = m.group(3)  # type: str
             if par in sp.__dict__:
                 # Known parameter.
                 if ope == "" or ope == "+":
                     # We have par=val or par+=int.
                     try:
-                        val = parse_number(val)
+                        val_num = parse_number(val)
                     except ValueError:
                         parser.error("non-integer value for parameter: {0}".format(a))
                     if ope == "":
-                        setattr(sp, par, val)
+                        setattr(sp, par, val_num)
                     else:
-                        setattr(sp, par, getattr(sp, par) + val)
+                        setattr(sp, par, getattr(sp, par) + val_num)
                     continue
                 else:
                     # We have par*=float.
                     try:
-                        val = float(val)
+                        val_factor = float(val)
                     except ValueError:
                         parser.error("non-float value for parameter: {0}".format(a))
-                    setattr(sp, par, int(getattr(sp, par) * val))
+                    setattr(sp, par, int(getattr(sp, par) * val_factor))
                     continue
             elif ope == "":
                 # Unknown parameter given by par=val. Add it to the dictionary.
-                pars[par] = val
+                pars[par] = parse_number(val)
                 continue
         parser.error("unrecognized argument: {0}".format(a))
 
