@@ -37,10 +37,10 @@ while [ $# -gt 0 ]; do
 done
 
 $FORM -v
-$PYTHON $FORMSET "$@" -o -H
+"$PYTHON" "$FORMSET" "$@" -o -H
 cat form.set
-$PYTHON $FORMSET "$@" -u -H
-$FORM $($PYTHON $FORMSET "$@" -f) $SCRIPT_DIR/memcheck.frm >/dev/null 2>&1 &
+"$PYTHON" "$FORMSET" "$@" -u -H
+$FORM "$("$PYTHON" "$FORMSET" "$@" -f)" "$SCRIPT_DIR/memcheck.frm" >/dev/null 2>&1 &
 pid=$!
 sleep 1
 grep VmPeak /proc/$pid/status

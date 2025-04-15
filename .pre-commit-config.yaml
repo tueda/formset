@@ -47,6 +47,12 @@ repos:
     -   id: mypy
         args: []
 
+-   repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+    -   id: shellcheck
+        args: [-x]
+
 -   repo: https://github.com/jorisroovers/gitlint
     rev: v0.19.1
     hooks:
