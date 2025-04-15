@@ -11,28 +11,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
         python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up Python for Poetry
-        uses: actions/setup-python@v2
+      - name: Install poetry
+        run: pipx install poetry
 
-      - name: Set up Poetry
-        uses: Gr1N/setup-poetry@v5
-
-      - name: Set up Python for testing
-        uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Set Python version called from Poetry
-        run: |
-          poetry env use ${{ matrix.python-version }}
-          poetry run python --version
+          cache: poetry
 
       - name: Try the script
         run: poetry run python formset/formset.py

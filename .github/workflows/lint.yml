@@ -11,10 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Create requirements.txt for pip caching
+        run: echo gitlint >requirements.txt
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
 
       - name: Install dependencies
         run: pip install gitlint
@@ -26,10 +32,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Create requirements.txt for pip caching
+        run: echo pre-commit >requirements.txt
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
 
       - name: Run pre-commit
-        uses: pre-commit/action@v2.0.3
+        uses: pre-commit/action@v3.0.1
