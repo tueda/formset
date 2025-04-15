@@ -1,7 +1,7 @@
 formset
 =======
 
-[![Test](https://github.com/tueda/formset/workflows/Test/badge.svg?branch=main)](https://github.com/tueda/formset/actions?query=branch:main)
+[![Test](https://github.com/tueda/formset/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/tueda/formset/actions/workflows/test.yml?query=branch%3Amain)
 [![PyPI version](https://badge.fury.io/py/formtools-formset.svg)](https://pypi.org/project/formtools-formset/)
 
 A `form.set` generator.
