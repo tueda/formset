@@ -17,16 +17,19 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v4
 
-      - name: Install poetry
+      - name: Install Poetry
         run: pipx install poetry
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: poetry
 
       - name: Try the script
-        run: poetry run python formset/formset.py
+        run: |
+          poetry run python --version
+          poetry run python formset/formset.py
 
       - name: Install dependencies
         run: poetry install
@@ -60,6 +63,14 @@ jobs:
         run: |
           docker pull python:${{ matrix.python-version }}
           docker run --name test-container -d -v ${{ github.workspace }}:/workspace python:${{ matrix.python-version }} tail -f /dev/null
+
+      - name: Try the script
+        env:
+          SCRIPT: |
+            cd /workspace
+            python --version
+            python formset/formset.py
+        run: docker exec test-container bash -c "$SCRIPT"
 
       - name: Install dependencies
         env:
