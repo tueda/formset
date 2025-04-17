@@ -76,30 +76,8 @@ $ minos `formset.py -m` minos.file
 
 Python versions
 ---------------
-2.6, 2.7, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9
+2.7, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.13
 """
-
-
-if "check_output" not in dir(subprocess):
-    # For old systems where Python 2.6 + argparse available.
-    def check_output(*popenargs, **kwargs):  # type: ignore[no-untyped-def]
-        """Run a command."""
-        if "stdout" in kwargs:  # pragma: no cover
-            raise ValueError("stdout argument not allowed, " "it will be overridden.")
-        process = subprocess.Popen(  # type: ignore[call-overload]  # noqa: E501,S603
-            *popenargs, stdout=subprocess.PIPE, **kwargs
-        )
-        output, _ = process.communicate()
-        retcode = process.poll()
-        if retcode:
-            cmd = kwargs.get("args")
-            if cmd is None:
-                cmd = popenargs[0]
-            # `output` keyword is not available in 2.6.
-            raise subprocess.CalledProcessError(retcode, cmd)
-        return output
-
-    subprocess.check_output = check_output
 
 
 @contextlib.contextmanager
